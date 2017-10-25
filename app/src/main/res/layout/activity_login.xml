@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="kl.low.inspector.kl.law.inspector.activity.LoginActivity">
+
+    <data>
+        <variable
+            name="viewModel"
+            type="kl.law.inspector.vm.LoginViewModel" />
+    </data>
+
+    <android.support.constraint.ConstraintLayout
+        android:id="@+id/loginView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:focusable="true"
+        android:focusableInTouchMode="true">
+
+        <TextView
+            android:id="@+id/textView4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="16dp"
+            android:layout_marginStart="16dp"
+            android:text="用户名："
+            app:layout_constraintBaseline_toBaselineOf="@+id/userameEdit"
+            app:layout_constraintLeft_toLeftOf="parent" />
+
+        <TextView
+            android:id="@+id/textView5"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="密码："
+            app:layout_constraintBaseline_toBaselineOf="@+id/passwordEdit"
+            app:layout_constraintRight_toRightOf="@+id/textView4" />
+
+        <EditText
+            android:id="@+id/userameEdit"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:ems="10"
+            android:inputType="textPersonName"
+            android:text="@={viewModel.username}"
+            app:layout_constraintHorizontal_bias="0.506"
+            app:layout_constraintLeft_toRightOf="@+id/textView4"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <EditText
+            android:id="@+id/passwordEdit"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:ems="10"
+            android:inputType="textPassword"
+            android:text="@={viewModel.password}"
+            app:layout_constraintHorizontal_bias="0.506"
+            app:layout_constraintLeft_toRightOf="@+id/textView5"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/userameEdit" />
+
+        <Button
+            android:id="@+id/loginButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginRight="8dp"
+            android:onClick="@{viewModel.onLogin}"
+            android:text="登录"
+            app:layout_constraintBottom_toBottomOf="@+id/resetButton"
+            app:layout_constraintRight_toLeftOf="@+id/resetButton" />
+
+        <CheckBox
+            android:id="@+id/rememberCheckbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="@{viewModel.isRememberPassword}"
+            android:onClick="@{viewModel.onRememberClicked}"
+            android:text="记住密码"
+            app:layout_constraintBaseline_toBaselineOf="@+id/autoCheckbox"
+            app:layout_constraintLeft_toLeftOf="@+id/textView4" />
+
+        <CheckBox
+            android:id="@+id/autoCheckbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:checked="@{viewModel.isAutoLogin}"
+            android:onClick="@{viewModel.onAutoLoginClicked}"
+            android:text="自动登录"
+            app:layout_constraintRight_toRightOf="@+id/passwordEdit"
+            app:layout_constraintTop_toBottomOf="@+id/passwordEdit" />
+
+        <Button
+            android:id="@+id/resetButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="重填"
+            android:onClick="@{viewModel.onReset}"
+            app:layout_constraintRight_toRightOf="@+id/autoCheckbox"
+            app:layout_constraintTop_toBottomOf="@+id/autoCheckbox" />
+
+        <Button
+            android:id="@+id/button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:layout_marginLeft="8dp"
+            android:onClick="@{viewModel.test}"
+            android:text="测试"
+            android:visibility="invisible"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent" />
+    </android.support.constraint.ConstraintLayout>
+</layout>

@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+    <data>
+        <import type="android.view.View"/>
+        <variable
+            name="viewModel"
+            type="kl.law.inspector.vm.LegalCaseViewModel.ApproveViewModel"/>
+        <variable
+            name="progressCode"
+            type="Integer"/>
+    </data>
+
+    <ScrollView style="@style/MyApp.ViewContainer">
+        <LinearLayout style="@style/MyApp.ChildViewContainer"
+            android:focusable="true"
+            android:focusableInTouchMode="true">
+
+            <LinearLayout style="@style/MyApp.ContentLine"
+                android:visibility="@{progressCode>=4?View.VISIBLE:View.GONE}">
+                <TextView android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@{viewModel.serial}"
+                    android:textAlignment="center"
+                    android:textColor="@color/colorNormalTitle"
+                    android:textSize="24sp"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginBottom="12dp"
+                    android:textStyle="bold"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine">
+                <TextView style="@style/MyApp.Label"
+                    android:text="当事人："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.party}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine">
+                <TextView style="@style/MyApp.Label"
+                    android:text="地址："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.address}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine">
+                <TextView style="@style/MyApp.Label"
+                    android:text="法人："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.corporation}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine">
+                <TextView style="@style/MyApp.Label"
+                    android:text="联系电话："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.phone}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine">
+                <TextView style="@style/MyApp.Label"
+                    android:text="案情简述："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.description}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine">
+                <TextView style="@style/MyApp.Label"
+                    android:text="承办人："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.members}"/>
+            </LinearLayout>
+
+
+            <LinearLayout style="@style/MyApp.ContentLine"
+                android:visibility="@{progressCode==5 || progressCode==6 || progressCode==7 || progressCode==9 || progressCode==10 || progressCode==11?View.VISIBLE:View.GONE}">
+                <TextView style="@style/MyApp.Label"
+                    android:text="承办人意见："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.memberOpinion}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine"
+                android:visibility="@{progressCode==2 || progressCode==3 || progressCode==6  || progressCode==7 || progressCode==10 || progressCode==11?View.VISIBLE:View.GONE}">
+                <TextView style="@style/MyApp.Label"
+                    android:text="承办机构意见："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.departmentOpinion}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine"
+                android:visibility="@{progressCode==3 || progressCode==7 || progressCode==11?View.VISIBLE:View.GONE}">
+                <TextView style="@style/MyApp.Label"
+                    android:text="分管领导意见："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.branchOpioion}"/>
+            </LinearLayout>
+
+            <!--<LinearLayout style="@style/MyApp.ContentLine">-->
+                <!--<TextView style="@style/MyApp.Label"-->
+                    <!--android:text="主管领导意见："/>-->
+                <!--<TextView style="@style/MyApp.Content"-->
+                    <!--android:text="@{viewModel.primaryOpinion}"/>-->
+            <!--</LinearLayout>-->
+
+            <LinearLayout style="@style/MyApp.ContentLine"
+                android:layout_marginTop="12dp"
+                android:visibility="@{progressCode==1 || progressCode==5 || progressCode==9?View.VISIBLE:View.GONE}">
+                <TextView style="@style/MyApp.Label"
+                    android:text="承办机构意见："/>
+                <EditText style="@style/MyApp.Content"
+                    android:hint="请输入承办机构意见"
+                    android:text="@={viewModel.departmentOpinion}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine"
+                android:layout_marginTop="12dp"
+                android:visibility="@{progressCode==2 || progressCode==6 || progressCode==10?View.VISIBLE:View.GONE}">
+                <TextView style="@style/MyApp.Label"
+                    android:text="分管领导意见："/>
+                <EditText  style="@style/MyApp.Content"
+                    android:hint="请输入分管意见"
+                    android:text="@={viewModel.branchOpioion}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine"
+                android:layout_marginTop="12dp"
+                android:visibility="@{progressCode==3 || progressCode==7 || progressCode==11?View.VISIBLE:View.GONE}">
+                <TextView style="@style/MyApp.Label"
+                    android:text="主管领导意见："/>
+                <EditText  style="@style/MyApp.Content"
+                    android:hint="请输入主管领导意见"
+                    android:text="@={viewModel.primaryOpinion}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine"
+                android:orientation="vertical"
+                android:layout_marginTop="12dp"
+                android:visibility="@{progressCode==4?View.VISIBLE:View.GONE}">
+                <TextView style="@style/MyApp.Label"
+                    android:text="承办人意见　"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="依据"
+                    android:textSize="18sp"
+                    android:textAlignment="center"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"/>
+
+                <Spinner
+                    android:id="@+id/legalProvisionSpinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    adapter="@{viewModel.legalProvisionAdapter}"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="给予"
+                    android:textSize="18sp"
+                    android:textAlignment="center"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"/>
+
+                <Spinner
+                    android:id="@+id/punishSpinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    adapter="@{viewModel.punishAdapter}"/>
+
+                <EditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:hint="其余文字意见"
+                    android:text="@={viewModel.otherOpinion}"
+                    android:lines="3" />
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine"
+                android:orientation="vertical"
+                android:layout_marginTop="12dp"
+                android:visibility="@{progressCode==8?View.VISIBLE:View.GONE}">
+                <TextView style="@style/MyApp.Label"
+                    android:text="承办人意见　"/>
+
+                <Spinner
+                    android:id="@+id/behaviorSpinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    adapter="@{viewModel.behaviorAdapter}"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="依据"
+                    android:textAlignment="center"
+                    android:textSize="18sp" />
+
+                <Spinner
+                    android:id="@+id/legalProvisionSpinner2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    adapter="@{viewModel.legalProvisionAdapter}"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="之规定，给予"
+                    android:textAlignment="center"
+                    android:textSize="18sp" />
+
+                <Spinner
+                    android:id="@+id/punishSpinner2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    adapter="@{viewModel.punishAdapter}"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"/>
+
+                <EditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:hint="其余文字意见"
+                    android:text="@={viewModel.otherOpinion}"
+                    android:lines="3" />
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine"
+                android:padding="0dp"
+                android:layout_marginTop="12dp">
+                <Button
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_margin="8dp"
+                    android:background="@drawable/bg_button_decline"
+                    android:text="拒绝"
+                    android:onClick="@{viewModel.onDeclineClicked}"
+                    android:textColor="@color/colorNormalButtonText" />
+
+                <Button
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_margin="8dp"
+                    android:background="@drawable/bg_button_normal"
+                    android:text="提交审核"
+                    android:onClick="@{viewModel.onSubmitClicked}"
+                    android:textColor="@color/colorNormalButtonText" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</layout>
+

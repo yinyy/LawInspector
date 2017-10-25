@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="general_padding_top">5dp</dimen>
+    <dimen name="general_padding_bottom">5dp</dimen>
+    <dimen name="general_padding_left">5dp</dimen>
+    <dimen name="general_padding_right">5dp</dimen>
+    <dimen name="general_padding">5dp</dimen>
+    <dimen name="general_padding_middle">10dp</dimen>
+    <dimen name="general_padding_large">15dp</dimen>
+
+    <dimen name="general_margin">5dp</dimen>
+
+
+    <dimen name="font_size_little">12sp</dimen>
+    <dimen name="font_size_normal">14sp</dimen>
+    <dimen name="font_size_large">16sp</dimen>
+    <dimen name="font_size_big">18sp</dimen>
+</resources>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+    <data>
+        <variable
+            name="viewModel"
+            type="kl.law.inspector.vm.LegalCaseViewModel.DetailViewModel"/>
+    </data>
+
+    <ScrollView style="@style/MyApp.ViewContainer">
+
+        <LinearLayout style="@style/MyApp.ChildViewContainer">
+
+            <LinearLayout style="@style/MyApp.ContentLine">
+                <TextView style="@style/MyApp.Label"
+                    android:text="案件标题："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.title}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine">
+                <TextView style="@style/MyApp.Label"
+                    android:text="当事人："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.party}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine">
+                <TextView style="@style/MyApp.Label"
+                    android:text="地址："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.address}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine">
+                <TextView style="@style/MyApp.Label"
+                    android:text="法人："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.corporation}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine">
+                <TextView style="@style/MyApp.Label"
+                    android:text="联系电话："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.phone}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine">
+                <TextView style="@style/MyApp.Label"
+                    android:text="案情简述："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.description}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine">
+                <TextView style="@style/MyApp.Label"
+                    android:text="承办人："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.members}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine" android:layout_marginTop="12dp"
+                android:padding="0dp">
+                <Button
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_button_decline"
+                    android:onClick="@{viewModel.onProgressClicked}"
+                    android:text="进度查询"
+                    android:textColor="@color/colorNormalButtonText"/>
+
+                <Button
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_button_normal"
+                    android:onClick="@{viewModel.onFileClicked}"
+                    android:text="文件查询"
+                    android:textColor="@color/colorNormalButtonText" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+</layout>

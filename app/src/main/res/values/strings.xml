@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">垦利综合行政执法管理系统</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="title_activity_main2">Main2Activity</string>
+    <string name="title_activity_settings">Settings</string>
+
+</resources>

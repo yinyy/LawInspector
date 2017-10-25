@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+        <variable
+            name="viewModel"
+            type="kl.law.inspector.vm.DocumentViewModel.CreateViewModel"/>
+    </data>
+
+    <ScrollView style="@style/MyApp.ViewContainer">
+        <LinearLayout style="@style/MyApp.ChildViewContainer"
+            android:focusableInTouchMode="true"
+            android:focusable="true">
+            <LinearLayout style="@style/MyApp.ContentLine">
+                <TextView style="@style/MyApp.Label"
+                    android:text="标题："/>
+                <EditText style="@style/MyApp.Content"
+                    android:text="@={viewModel.title}"
+                    android:hint="请输入标题"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine" android:orientation="vertical">
+                <TextView style="@style/MyApp.Label"
+                    android:text="公文上传　"/>
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/recyclerView"
+                    adapter="@{viewModel.fileAdapter}"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine" android:layout_marginTop="12dp">
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_button_normal"
+                    android:text="提交审核"
+                    android:textColor="@color/colorNormalButtonText"
+                    android:onClick="@{viewModel.onSubmit}"/>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</layout>

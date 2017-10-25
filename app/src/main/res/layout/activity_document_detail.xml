@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <import type="android.view.View" />
+
+        <variable
+            name="viewModel"
+            type="kl.law.inspector.vm.DocumentViewModel.DetailViewModel" />
+    </data>
+
+    <ScrollView style="@style/MyApp.ViewContainer">
+
+        <LinearLayout style="@style/MyApp.ChildViewContainer">
+
+            <LinearLayout style="@style/MyApp.ContentLine">
+
+                <TextView
+                    style="@style/MyApp.Label"
+                    android:text="标题：" />
+
+                <TextView
+                    style="@style/MyApp.Content"
+                    android:text="@{viewModel.title}" />
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/MyApp.ContentLine"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/MyApp.Label"
+                    android:text="公文　" />
+
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/fileRecyclerView"
+                    adapter="@{viewModel.fileAdapter}"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/MyApp.ContentLine"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical"
+                android:visibility="@{viewModel.progressCode==1?View.VISIBLE:View.GONE}">
+
+                <TextView
+                    style="@style/MyApp.Label"
+                    android:text="审批人　" />
+
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/approverRecyclerView"
+                    adapter="@{viewModel.approverAdapter}"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/MyApp.ContentLine"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical"
+                android:visibility="@{viewModel.progressCode==2?View.VISIBLE:View.GONE}">
+
+                <TextView
+                    style="@style/MyApp.Label"
+                    android:text="审批人意见　" />
+
+                <EditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="审批人意见填写在这里"
+                    android:inputType="textMultiLine"
+                    android:lines="3"
+                    android:text="@={viewModel.approverOpinion}"
+                    android:layout_marginTop="8dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/MyApp.ContentLine"
+                android:layout_marginTop="12dp"
+                android:visibility="@{viewModel.progressCode==3 || viewModel.progressCode==4?View.VISIBLE:View.GONE}">
+
+                <TextView
+                    style="@style/MyApp.Label"
+                    android:text="审批人意见：" />
+
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.approverOpinion}"/>
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/MyApp.ContentLine"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical"
+                android:visibility="@{viewModel.progressCode==3?View.VISIBLE:View.GONE}">
+
+                <TextView
+                    style="@style/MyApp.Label"
+                    android:text="传阅人　" />
+
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/readerRecyclerView"
+                    adapter="@{viewModel.readerAdapter}"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/MyApp.ContentLine"
+                android:layout_marginTop="12dp"
+                android:visibility="@{viewModel.progressCode==1||viewModel.progressCode==3?View.VISIBLE:View.GONE}">
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_button_normal"
+                    android:text="发送"
+                    android:onClick="@{viewModel.onSendClicked}"
+                    android:textColor="@color/colorNormalButtonText" />
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/MyApp.ContentLine"
+                android:layout_marginTop="12dp"
+                android:visibility="@{viewModel.progressCode==2?View.VISIBLE:View.GONE}">
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_button_normal"
+                    android:text="完成"
+                    android:onClick="@{viewModel.onFinishClicked}"
+                    android:textColor="@color/colorNormalButtonText" />
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/MyApp.ContentLine"
+                android:layout_marginTop="12dp"
+                android:visibility="@{viewModel.progressCode==4?View.VISIBLE:View.GONE}">
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_button_normal"
+                    android:text="已阅读"
+                    android:onClick="@{viewModel.onReadClicked}"
+                    android:textColor="@color/colorNormalButtonText" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</layout>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+
+    <color name="colorPermissionNotGranted">#e91e63</color>
+    <color name="colorPermissionGranted">#7ab900</color>
+
+    <color name="colorIistItemSeperator">#cecece</color>
+
+
+
+    <color name="colorNormalButtonText">#ffffff</color>
+
+    <color name="colorNormalTitle">#575757</color>
+    <color name="colorNormalSubtitle">#878787</color>
+
+    <color name="colorActivityDefaultBackground">#ebebeb</color>
+    <color name="colorActivityDefaultContentBackground">#ffffff</color>
+
+</resources>

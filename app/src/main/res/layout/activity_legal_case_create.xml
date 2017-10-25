@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+    <data>
+        <variable
+            name="viewModel"
+            type="kl.law.inspector.vm.LegalCaseViewModel.CreateViewModel"/>
+    </data>
+
+        <ScrollView style="@style/MyApp.ViewContainer">
+            <LinearLayout style="@style/MyApp.ChildViewContainer"
+                android:focusable="true"
+                android:focusableInTouchMode="true">
+
+                <LinearLayout style="@style/MyApp.ContentLine">
+                    <TextView style="@style/MyApp.Label"
+                        android:text="案件标题："/>
+                    <EditText style="@style/MyApp.Content"
+                        android:hint="请输入案件标题"
+                        android:text="@={viewModel.title}"/>
+                </LinearLayout>
+
+                <LinearLayout style="@style/MyApp.ContentLine">
+                    <TextView style="@style/MyApp.Label"
+                        android:text="当事人："/>
+                    <EditText style="@style/MyApp.Content"
+                        android:hint="请输入当事人"
+                        android:text="@={viewModel.party}"/>
+                </LinearLayout>
+
+                <LinearLayout style="@style/MyApp.ContentLine">
+                    <TextView style="@style/MyApp.Label"
+                        android:text="地址："/>
+                    <EditText style="@style/MyApp.Content"
+                        android:hint="请输入地址"
+                        android:text="@={viewModel.address}"/>
+                </LinearLayout>
+
+                <LinearLayout style="@style/MyApp.ContentLine">
+                    <TextView style="@style/MyApp.Label"
+                        android:text="法人："/>
+                    <EditText style="@style/MyApp.Content"
+                        android:hint="请输入法人"
+                        android:text="@={viewModel.corporation}"/>
+                </LinearLayout>
+
+                <LinearLayout style="@style/MyApp.ContentLine">
+                    <TextView style="@style/MyApp.Label"
+                        android:text="联系电话："/>
+                    <EditText style="@style/MyApp.Content"
+                        android:hint="请输入联系电话"
+                        android:text="@={viewModel.phone}"/>
+                </LinearLayout>
+
+                <LinearLayout style="@style/MyApp.ContentLine">
+                    <TextView style="@style/MyApp.Label"
+                        android:text="案件来源："/>
+                    <Spinner
+                        android:id="@+id/sourceSpinner"
+                    adapter="@{viewModel.sourceAdapter}"
+                        style="@style/MyApp.Content"/>
+                </LinearLayout>
+
+                <LinearLayout style="@style/MyApp.ContentLine">
+                    <TextView style="@style/MyApp.Label"
+                        android:text="违建标识："/>
+                    <CheckBox
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="@={viewModel.authorized}"
+                        style="@style/MyApp.Content"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:padding="8dp"
+                    android:background="#ffffff"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView style="@style/MyApp.Label"
+                        android:text="案情简述    " />
+
+                    <Spinner
+                        android:layout_marginBottom="8dp"
+                        android:layout_marginTop="8dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/behaviourSpinner"
+                        adapter="@{viewModel.behaviorAdapter}" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="违反了"
+                        android:textSize="18sp"
+                        android:textAlignment="center"/>
+
+                    <Spinner
+                        android:id="@+id/legalProvisionSpinner"
+                        adapter="@{viewModel.legalProvisionAdapter}"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:layout_marginTop="8dp"/>
+
+                    <EditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="详细案情描述"
+                        android:text="@={viewModel.description}"
+                        android:lines="3" />
+                </LinearLayout>
+
+                <LinearLayout style="@style/MyApp.ContentLine"
+                    android:layout_marginTop="12dp">
+                    <TextView style="@style/MyApp.Label"
+                        android:text="承办人："/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="18sp"
+                        android:text="@{viewModel.currentOperator}"
+                        android:layout_marginLeft="8dp"
+                        android:layout_marginRight="8dp" />
+                    <Spinner
+                        android:id="@+id/memberSpinner"
+                        adapter="@{viewModel.memberAdapter}"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"/>
+                </LinearLayout>
+
+                <LinearLayout style="@style/MyApp.ContentLine" android:layout_marginTop="12dp">
+                    <Button
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_button_normal"
+                        android:onClick="@{viewModel.onSubmit}"
+                        android:text="提交审核"
+                        android:textColor="@color/colorNormalButtonText"/>
+                </LinearLayout>
+
+            </LinearLayout>
+        </ScrollView>
+</layout>
+

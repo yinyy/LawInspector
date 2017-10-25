@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+    <data>
+        <variable
+            name="viewModel"
+            type="kl.law.inspector.vm.LegalCaseViewModel.FileViewModel"/>
+    </data>
+
+    <ScrollView style="@style/MyApp.ViewContainer">
+        <LinearLayout style="@style/MyApp.ChildViewContainer">
+            <LinearLayout style="@style/MyApp.ContentLine" android:visibility="gone">
+                <TextView style="@style/MyApp.Label"
+                    android:text="当事人："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.party}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine" android:visibility="gone">
+                <TextView style="@style/MyApp.Label"
+                    android:text="地址："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.address}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine" android:visibility="gone">
+                <TextView style="@style/MyApp.Label"
+                    android:text="法人："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.corporation}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine" android:visibility="gone">
+                <TextView style="@style/MyApp.Label"
+                    android:text="联系电话："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.phone}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine" android:visibility="gone">
+                <TextView style="@style/MyApp.Label"
+                    android:text="案情简述："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.description}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine" android:visibility="gone">
+                <TextView style="@style/MyApp.Label"
+                    android:text="承办人："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.members}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine"
+                android:orientation="vertical">
+                <TextView style="@style/MyApp.Label"
+                    android:text="档案资料　"/>
+                <android.support.v7.widget.RecyclerView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    adapter="@{viewModel.documentAdapter}"
+                    android:id="@+id/documentRecyclerView" />
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical">
+                <TextView style="@style/MyApp.Label"
+                    android:text="照片资料　"/>
+                <android.support.v7.widget.RecyclerView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    adapter="@{viewModel.pictureAdapter}"
+                    android:id="@+id/pictureRecyclerView" />
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical">
+                <TextView style="@style/MyApp.Label"
+                    android:text="视频资料　"/>
+                <android.support.v7.widget.RecyclerView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    adapter="@{viewModel.videoAdapter}"
+                    android:id="@+id/videoRecyclerView" />
+            </LinearLayout>
+
+            <!--<LinearLayout style="@style/MyApp.ContentLine"-->
+                <!--android:layout_marginTop="12dp"-->
+                <!--android:orientation="vertical">-->
+
+                <!--<Button-->
+                    <!--android:layout_width="match_parent"-->
+                    <!--android:layout_height="wrap_content"-->
+                    <!--android:background="@drawable/bg_button_attachment"-->
+                    <!--android:onClick="@{viewModel.onAttachmentClicked}"-->
+                    <!--android:text="上传资料"-->
+                    <!--android:textColor="@color/colorNormalButtonText" />-->
+            <!--</LinearLayout>-->
+
+            <LinearLayout style="@style/MyApp.ContentLine"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical">
+                <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_button_normal"
+                android:text="保存"
+                android:onClick="@{viewModel.onSubmitClicked}"
+                android:textColor="@color/colorNormalButtonText"/>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</layout>

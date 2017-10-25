@@ -1,0 +1,6 @@
+<resources>
+    <string name="navigation_title_home">首页</string>
+    <string name="navigation_title_fun1">功能1</string>
+    <string name="navigation_title_fun2">功能2</string>
+    <string name="navigation_title_profile">我</string>
+</resources>

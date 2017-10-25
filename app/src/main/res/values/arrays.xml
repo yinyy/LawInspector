@@ -1,0 +1,59 @@
+<resources>
+    <string-array name="legalCaseKind">
+    <item>来源1</item>
+    <item>来源2</item>
+    <item>来源3</item>
+    <item>来源4</item>
+    <item>来源5</item>
+    <item>来源6</item>
+    </string-array>
+    
+    <string-array name="legalCaseBehavior">
+        <item>请选择违法行为</item>
+        <item>违法行为1</item>
+        <item>违法行为2</item>
+        <item>违法行为3</item>
+        <item>违法行为4</item>
+        <item>违法行为5</item>
+        <item>违法行为6</item>
+        <item>违法行为7</item>
+        <item>违法行为8</item>
+        <item>违法行为9</item>
+        <item>违法行为10</item>
+    </string-array>
+
+     <string-array name="legalCaseLaw">
+         <item>请选择条款</item>
+         <item>法律条款1</item>
+         <item>法律条款2</item>
+         <item>法律条款3</item>
+         <item>法律条款4</item>
+         <item>法律条款5</item>
+         <item>法律条款6</item>
+         <item>法律条款7</item>
+         <item>法律条款8</item>
+         <item>法律条款9</item>
+         <item>法律条款10</item>
+     </string-array>
+
+    <string-array name="legalCaseLaw2">
+        <item>请选择条款</item>
+        <item>法律条款1</item>
+        <item>法律条款2</item>
+        <item>法律条款3</item>
+        <item>法律条款4</item>
+        <item>法律条款5</item>
+        <item>法律条款6</item>
+        <item>法律条款7</item>
+        <item>法律条款8</item>
+        <item>法律条款9</item>
+        <item>法律条款10</item>
+    </string-array>
+
+    <string-array name="attachmentSource">
+        <item>拍摄照片</item>
+        <item>拍摄视频</item>
+        <item>系统图库</item>
+        <item>文件管理器</item>
+    </string-array>
+</resources>
