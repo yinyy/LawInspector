@@ -176,7 +176,7 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
     }
 
     private void loadLegalCase(final int index) {
-        String url = ApiKit.URL_LEGAL_CASE_LIST(scrollListener[index].nextPage(), index+1, UserData.getInstance().getId());
+        String url = ApiKit.URL_LEGAL_CASE_LIST(scrollListener[index].nextPage(), index + 1, UserData.getInstance().getId());
 
         NetworkAccessKit.getData(context, url, new NetworkAccessKit.DefaultCallback<JSONObject>() {
 
@@ -205,11 +205,15 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
                     String description = jsonObject.optString("caseDescription");
                     vm.subtitle.set(description.length() > 20 ? description.substring(0, 20) : description);
                     vm.serial.set(jsonObject.optString("caseDocNo"));
-                    //TODO:将来替换剩余天数
-                    vm.remainder.set("剩余天数");
-                    //TODO:将来替换案件流程
-                    vm.progress.set("登记案件，等待队长审批。");
-                    vm.progressCode.set(1);
+
+                    vm.remainder.set("测试：" + jsonObject.optString("step"));
+
+                    String step = jsonObject.optString("step");
+                    String[] values = step.split(",");
+
+                    vm.progress.set(MessageFormat.format("{0} - {1}", values[2], values[3]));
+                    //vm.progressCode.set(Integer.parseInt(MessageFormat.format("{0}{1}", values[0], values[1])));
+
                     datas.add(vm);
                 }
 
@@ -218,7 +222,9 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
             }
 
             @Override
-            public void failure(String remark) {
+            public void failure(int code, String remark) {
+                super.failure(code, remark);
+
                 scrollListener[index].clearLoading();
                 Toast.makeText(context, remark, Toast.LENGTH_LONG).show();
             }
@@ -462,6 +468,7 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
         public final ObservableField<String> phone = new ObservableField<>();
         public final ObservableField<String> description = new ObservableField<>();
         public final ObservableField<String> members = new ObservableField<>();
+        public final ObservableField<String> serial = new ObservableField<>();
 
         private String id;
         private int stage;//工作流的大状态
@@ -470,25 +477,22 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
             super(context, binding);
         }
 
-        public void init(String id){
-            this.id= id;
+        public void init(String id) {
+            this.id = id;
 
             NetworkAccessKit.getData(context, ApiKit.URL_LEGAL_CASE_DETAIL(id), new NetworkAccessKit.DefaultCallback<JSONObject>() {
                 @Override
                 public void success(JSONObject data) {
-                    try {
-                        title.set(data.getString("title"));
-                        party.set(data.getString("caseParties"));
-                        address.set(data.getString("address"));
-                        corporation.set(data.getString("caseLegalAgent"));
-                        phone.set(data.getString("phoneNumber"));
-                        description.set(data.getString("caseDescription"));
-                        members.set(data.getString("assigneeNames"));
+                    title.set(data.optString("title"));
+                    party.set(data.optString("caseParties"));
+                    address.set(data.optString("address"));
+                    corporation.set(data.optString("caseLegalAgent"));
+                    phone.set(data.optString("phoneNumber"));
+                    description.set(data.optString("caseDescription"));
+                    members.set(data.optString("assigneeNames"));
+                    serial.set(data.optString("caseDocNo"));
 
-                        stage = data.getInt("caseStage");
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                    stage = data.optInt("caseStage", 0);
                 }
             });
         }
@@ -496,7 +500,7 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
         public void onProgressClicked(View view) {
             Intent intent = new Intent(view.getContext(), LegalCaseProgressActivity.class);
             intent.putExtra("id", id);
-            intent.putExtra("stage", stage);
+            //intent.putExtra("stage", stage);
             view.getContext().startActivity(intent);
         }
 
@@ -509,7 +513,8 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
 
     public static class ItemViewModel {
         public static final int CLICK_ACTION_DETAIL = 0x00;
-        public static final int CLICK_ACTION_SIGN = 0x01;
+        public static final int CLICK_ACTION_APPROVE = 0x01;
+        public static final int CLICK_ACTION_FILE = 0x02;
 
         public final ObservableField<String> picture= new ObservableField<>();
         public final ObservableField<String> title = new ObservableField<>();
@@ -533,12 +538,16 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
             if(clickAction==CLICK_ACTION_DETAIL) {
                 Intent intent = new Intent(view.getContext(), LegalCaseDetailActivity.class);
                 intent.putExtra("id", id);
-                intent.putExtra("progressCode", progressCode.get());
                 view.getContext().startActivity(intent);
-            }else if(clickAction ==CLICK_ACTION_SIGN) {
+            }else if(clickAction == CLICK_ACTION_APPROVE) {
                 Intent intent = new Intent(view.getContext(), LegalCaseApproveActivity.class);
                 intent.putExtra("id", id);
                 intent.putExtra("progressCode", progressCode.get());
+                view.getContext().startActivity(intent);
+            }else if(clickAction==CLICK_ACTION_FILE){
+                Intent intent = new Intent(view.getContext(), LegalCaseFileActivity.class);
+                intent.putExtra("id", id);
+                intent.putExtra("showFinishedButton", true);
                 view.getContext().startActivity(intent);
             }
         }
@@ -547,15 +556,12 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
     public static class ProgressViewModel extends AbstractViewModel<ActivityLegalCaseProgressBinding>{
 
         public final ObservableField<SimpleRecycleViewAdapter> progressAdapter = new ObservableField<>();
-        private String id;
 
         public ProgressViewModel(Context context, ActivityLegalCaseProgressBinding binding) {
             super(context, binding);
         }
 
         public void init(String id){
-            this.id = id;
-
             NetworkAccessKit.getData(context, ApiKit.URL_LEGAL_CASE_PROGRESS_LIST(id), new NetworkAccessKit.DefaultCallback<JSONObject>() {
 
                 @Override
@@ -573,8 +579,15 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
                             ivm.title.set(MessageFormat.format("{0}：{1}", ivm.title.get(), progress.optString("remark")));
                         }
 
-                        ivm.approve.set(progress.optString("remark"));
-                        ivm.status.set(progress.optString("status"));
+                        //ivm.status.set(progress.optString("status"));
+                        String status = progress.optString("status");
+                        if("pass".equals(status)) {
+                            ivm.statusCode.set(1);
+                        }else if("reject".equals(status)){
+                            ivm.statusCode.set(2);
+                        }else{
+                            ivm.statusCode.set(0);
+                        }
 
                         datas.add(ivm);
                     }
@@ -589,30 +602,16 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
 
         public static class ItemViewModel {
             public final ObservableField<String> title = new ObservableField<>();
-            public final ObservableField<String> approve = new ObservableField<>();
-            public final ObservableField<String> status = new ObservableField<>();
+            public final ObservableInt statusCode = new ObservableInt();
 
             public final ObservableBoolean isHeader = new ObservableBoolean();
             public final ObservableBoolean isFooter = new ObservableBoolean();
-            //public final ObservableBoolean finished = new ObservableBoolean();
-
-//            private String id;
-//            public void setId(String id){
-//                this.id = id;
-//            }
-//
-//            public void onItemClicked(View view) {
-//                Intent intent = new Intent(view.getContext(), LegalCaseApproveActivity.class);
-//                intent.putExtra("id", id);
-//                intent.putExtra("progressCode", progressCode.get());
-//                view.getContext().startActivity(intent);
-//            }
         }
     }
 
     public static class ApproveViewModel extends AbstractViewModel<ActivityLegalCaseApproveBinding>{
         public final ObservableField<String> serial = new ObservableField<>();
-
+        public final ObservableField<String> title = new ObservableField<>();
         public final ObservableField<String> party = new ObservableField<>();
         public final ObservableField<String> address = new ObservableField<>();
         public final ObservableField<String> corporation = new ObservableField<>();
@@ -622,9 +621,9 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
 
         public final ObservableField<String> memberOpinion = new ObservableField<>();
         public final ObservableField<String> departmentOpinion = new ObservableField<>();
+        public final ObservableField<String> centerOpinion = new ObservableField<>();
         public final ObservableField<String> branchOpioion = new ObservableField<>();
         public final ObservableField<String> primaryOpinion = new ObservableField<>();
-        public final ObservableField<String> otherOpinion = new ObservableField<>();
 
         public final ObservableField<BaseAdapter> punishAdapter = new ObservableField<>();
         public final ObservableField<BaseAdapter> behaviorAdapter = new ObservableField<>();
@@ -636,89 +635,257 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
             super(context, binding);
         }
 
-        public void init(String id){
+        public void init(String id, int stage, int step) {
             this.id = id;
 
-            serial.set("垦执停字【1】第201701010001号");
-            party.set("某个倒霉孩子");
-            address.set("地点");
-            corporation.set("法人");
-            phone.set("电话");
-            description.set("描述");
-            members.set("张三 李四");
+            if((stage==3||stage==4) && step==1) {
+                if(stage==4){
+                    NetworkAccessKit.getData(context, ApiKit.URL_ARTICLE(ApiKit.ArticleCategory.ILLEGAL_BEHAVIOR), new NetworkAccessKit.DefaultCallback<JSONArray>() {
 
-            memberOpinion.set("承办人意见");
-            departmentOpinion.set("承办机构意见");
-            branchOpioion.set("分管领导意见");
-            primaryOpinion.set("主管领导意见");
-            otherOpinion.set("其它需要补充的意见");
+                        @Override
+                        public void success(JSONArray data) {
+                            List<String> items = new LinkedList<String>();
 
-            NetworkAccessKit.getData(context, ApiKit.URL_ARTICLE(ApiKit.ArticleCategory.PUNISH), new NetworkAccessKit.DefaultCallback<JSONArray>(){
+                            for (int i = 0; i < data.length(); i++) {
+                                try {
+                                    JSONObject jobj = data.getJSONObject(i);
+                                    items.add(jobj.getString("title"));
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
 
-                @Override
-                public void success(JSONArray data) {
-                    List<String> items = new LinkedList<String>();
-
-                    for (int i = 0; i < data.length(); i++) {
-                        try {
-                            JSONObject jobj = data.getJSONObject(i);
-                            items.add(jobj.getString("title"));
-                        }catch (Exception e){
-                            e.printStackTrace();
+                            behaviorAdapter.set(new ArrayAdapter<String>(context, R.layout.simple_spinner_item_1, items));
                         }
-                    }
-
-                    punishAdapter.set(new ArrayAdapter<String>(context, R.layout.simple_spinner_item_1, items));
+                    });
                 }
-            });
 
-            NetworkAccessKit.getData(context, ApiKit.URL_ARTICLE(ApiKit.ArticleCategory.ILLEGAL_BEHAVIOR), new NetworkAccessKit.DefaultCallback<JSONArray>(){
+                NetworkAccessKit.getData(context, ApiKit.URL_ARTICLE(ApiKit.ArticleCategory.PUNISH), new NetworkAccessKit.DefaultCallback<JSONArray>() {
 
-                @Override
-                public void success(JSONArray data) {
-                    List<String> items = new LinkedList<String>();
+                    @Override
+                    public void success(JSONArray data) {
+                        List<String> items = new LinkedList<String>();
 
-                    for (int i = 0; i < data.length(); i++) {
-                        try {
-                            JSONObject jobj = data.getJSONObject(i);
-                            items.add(jobj.getString("title"));
-                        }catch (Exception e){
-                            e.printStackTrace();
+                        for (int i = 0; i < data.length(); i++) {
+                            try {
+                                JSONObject jobj = data.getJSONObject(i);
+                                items.add(jobj.getString("title"));
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
                         }
+
+                        punishAdapter.set(new ArrayAdapter<String>(context, R.layout.simple_spinner_item_1, items));
                     }
+                });
 
-                    behaviorAdapter.set(new ArrayAdapter<String>(context, R.layout.simple_spinner_item_1, items));
-                }
-            });
+                NetworkAccessKit.getData(context, ApiKit.URL_ARTICLE(ApiKit.ArticleCategory.LEGAL_PROVISION), new NetworkAccessKit.DefaultCallback<JSONArray>() {
 
-            NetworkAccessKit.getData(context, ApiKit.URL_ARTICLE(ApiKit.ArticleCategory.LEGAL_PROVISION), new NetworkAccessKit.DefaultCallback<JSONArray>(){
+                    @Override
+                    public void success(JSONArray data) {
+                        List<String> items = new LinkedList<String>();
 
-                @Override
-                public void success(JSONArray data) {
-                    List<String> items = new LinkedList<String>();
-
-                    for (int i = 0; i < data.length(); i++) {
-                        try {
-                            JSONObject jobj = data.getJSONObject(i);
-                            items.add(jobj.getString("title"));
-                        }catch (Exception e){
-                            e.printStackTrace();
+                        for (int i = 0; i < data.length(); i++) {
+                            try {
+                                JSONObject jobj = data.getJSONObject(i);
+                                items.add(jobj.getString("title"));
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
                         }
-                    }
 
-                    legalProvisionAdapter.set(new ArrayAdapter<String>(context, R.layout.simple_spinner_item_1, items));
+                        legalProvisionAdapter.set(new ArrayAdapter<String>(context, R.layout.simple_spinner_item_1, items));
+                    }
+                });
+            }
+
+            NetworkAccessKit.getData(context, ApiKit.URL_LEGAL_CASE_DETAIL(id), new NetworkAccessKit.DefaultCallback<JSONObject>() {
+                @Override
+                public void success(JSONObject data) {
+                    title.set(data.optString("title"));
+                    party.set(data.optString("caseParties"));
+                    address.set(data.optString("address"));
+                    corporation.set(data.optString("caseLegalAgent"));
+                    phone.set(data.optString("phoneNumber"));
+                    description.set(data.optString("caseDescription"));
+                    members.set(data.optString("assigneeNames"));
+                    serial.set(data.optString("caseDocNo"));
+
+                    switch (data.optString("caseStage")) {
+                        case "1":
+                            departmentOpinion.set(data.optString("institutionRegOption"));
+                            branchOpioion.set(data.optString("deptLeaderRegOption"));
+                            primaryOpinion.set(data.optString("mainLeaderRegOption"));
+
+                            memberOpinion.set("");
+                            centerOpinion.set("");
+                            break;
+                        case "3":
+                            memberOpinion.set(data.optString("assigneePenalOption"));
+                            departmentOpinion.set(data.optString("institutionPenalOption"));
+                            branchOpioion.set(data.optString("deptLeaderPenalOption"));
+                            primaryOpinion.set(data.optString("mainLeaderPenalOption"));
+                            centerOpinion.set(data.optString("caseMgtCenterPenalOption"));
+                            break;
+                        case "4":
+                            memberOpinion.set(data.optString("assigneeCloseCaseOption"));
+                            departmentOpinion.set(data.optString("institutionCloseCaseOption"));
+                            primaryOpinion.set(data.optString("mainLeaderCloseCaseOption"));
+                            centerOpinion.set(data.optString("caseMgtCenterCloseCaseOption"));
+
+                            branchOpioion.set("");
+                            break;
+                        default:
+                            break;
+                    }
                 }
             });
         }
 
-        public void onDeclineClicked(View view) {
-            Toast.makeText(view.getContext(), "拒绝本次案件审批", Toast.LENGTH_LONG).show();
-            ((Activity) view.getRootView().getContext()).finish();
+        public void onDeclineClicked(final View view) {
+            View pview = (View) view.getParent().getParent().getParent();
+            ActivityLegalCaseApproveBinding binging = DataBindingUtil.getBinding(pview);
+
+            int stage = binging.getStage();
+            int progress = binging.getStep();
+
+            Map<String , Object> userMap = new HashMap<>();
+            userMap.put("id", UserData.getInstance().getId());
+            userMap.put("officeId", UserData.getInstance().getOfficeId());
+
+            Map<String, Object> legalCaseMap = new HashMap<>();
+            legalCaseMap.put("id", id);
+            legalCaseMap.put("approve", "reject");
+            legalCaseMap.put("step", MessageFormat.format("{0},{1}", stage, progress));
+
+            if(stage==3 && progress==1){
+                legalCaseMap.put("opinion",memberOpinion.get());
+                legalCaseMap.put("provision",binging.legalProvisionSpinner.getSelectedItem().toString());
+                legalCaseMap.put("punish",binging.punishSpinner.getSelectedItem().toString());
+            }else if(stage==4 && progress==1){
+                legalCaseMap.put("opinion",memberOpinion.get());
+                legalCaseMap.put("behavior",binging.behaviorSpinner.getSelectedItem().toString());
+                legalCaseMap.put("provision",binging.legalProvisionSpinner2.getSelectedItem().toString());
+                legalCaseMap.put("punish",binging.punishSpinner2.getSelectedItem().toString());
+            }else if(progress==2){
+                legalCaseMap.put("opinion", departmentOpinion.get());
+            }else if(progress==3){
+                legalCaseMap.put("opinion", centerOpinion.get());
+            }else if(progress==4){
+                legalCaseMap.put("opinion", branchOpioion.get());
+            }else if(progress==5){
+                legalCaseMap.put("opinion", primaryOpinion.get());
+            }
+
+            JSONObject jsonObject = new JSONObject();
+            try {
+                jsonObject.put("user", new JSONObject(userMap));
+                jsonObject.put("legalCase", new JSONObject(legalCaseMap));
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+
+            NetworkAccessKit.postData(context, ApiKit.URL_LEGAL_CASE_APPROVE, jsonObject, new NetworkAccessKit.DefaultCallback<JSONObject>(){
+
+                @Override
+                public void success(JSONObject data) {
+                    Toast.makeText(view.getContext(), "案件审批成功。", Toast.LENGTH_LONG).show();
+                    ((Activity) view.getRootView().getContext()).finish();
+                }
+
+                @Override
+                public void failure(int code, String remark) {
+                    super.failure(code, remark);
+
+                    if(code==CODE_SUCCESS){
+                        if("this step has approved".equals(remark)){
+                            new AlertDialog.Builder(context).setTitle("提示").setMessage("案件已经被审批！").setPositiveButton("确定", null).show();
+                        }
+                    }else{
+                        new AlertDialog.Builder(context).setTitle("提示").setMessage(remark).setPositiveButton("确定", null).show();
+                    }
+                }
+
+                @Override
+                public void error(String message) {
+                    super.error(message);
+
+                    new AlertDialog.Builder(context).setTitle("提示").setMessage(message).setPositiveButton("确定", null).show();
+                }
+            });
         }
 
-        public void onSubmitClicked(View view) {
-            Toast.makeText(view.getContext(), "提交本次案件审批，意见是：" + departmentOpinion.get(), Toast.LENGTH_LONG).show();
-            ((Activity) view.getRootView().getContext()).finish();
+        public void onSubmitClicked(final View view) {
+            View pview = (View) view.getParent().getParent().getParent();
+            ActivityLegalCaseApproveBinding binging = DataBindingUtil.getBinding(pview);
+
+            int stage = binging.getStage();
+            int progress = binging.getStep();
+
+            Map<String , Object> userMap = new HashMap<>();
+            userMap.put("id", UserData.getInstance().getId());
+            userMap.put("officeId", UserData.getInstance().getOfficeId());
+
+            Map<String, Object> legalCaseMap = new HashMap<>();
+            legalCaseMap.put("id", id);
+            legalCaseMap.put("approve", "pass");
+            legalCaseMap.put("step", MessageFormat.format("{0},{1}", stage, progress));
+
+            if(stage==3 && progress==1){
+                legalCaseMap.put("opinion",memberOpinion.get());
+                legalCaseMap.put("provision",binging.legalProvisionSpinner.getSelectedItem().toString());
+                legalCaseMap.put("punish",binging.punishSpinner.getSelectedItem().toString());
+            }else if(stage==4 && progress==1){
+                legalCaseMap.put("opinion",memberOpinion.get());
+                legalCaseMap.put("behavior",binging.behaviorSpinner.getSelectedItem().toString());
+                legalCaseMap.put("provision",binging.legalProvisionSpinner2.getSelectedItem().toString());
+                legalCaseMap.put("punish",binging.punishSpinner2.getSelectedItem().toString());
+            }else if(progress==2){
+                legalCaseMap.put("opinion", departmentOpinion.get());
+            }else if(progress==3){
+                legalCaseMap.put("opinion", centerOpinion.get());
+            }else if(progress==4){
+                legalCaseMap.put("opinion", branchOpioion.get());
+            }else if(progress==5){
+                legalCaseMap.put("opinion", primaryOpinion.get());
+            }
+
+            JSONObject jsonObject = new JSONObject();
+            try {
+                jsonObject.put("user", new JSONObject(userMap));
+                jsonObject.put("legalCase", new JSONObject(legalCaseMap));
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+
+            NetworkAccessKit.postData(context, ApiKit.URL_LEGAL_CASE_APPROVE, jsonObject, new NetworkAccessKit.DefaultCallback<JSONObject>(){
+
+                @Override
+                public void success(JSONObject data) {
+                    Toast.makeText(view.getContext(), "案件审批成功。", Toast.LENGTH_LONG).show();
+                    ((Activity) view.getRootView().getContext()).finish();
+                }
+
+                @Override
+                public void failure(int code, String remark) {
+                    super.failure(code, remark);
+
+                    if(code==CODE_SUCCESS){
+                        if("this step has approved".equals(remark)){
+                            new AlertDialog.Builder(context).setTitle("提示").setMessage("案件已经被审批！").setPositiveButton("确定", null).show();
+                        }
+                    }else{
+                        new AlertDialog.Builder(context).setTitle("提示").setMessage(remark).setPositiveButton("确定", null).show();
+                    }
+                }
+
+                @Override
+                public void error(String message) {
+                    super.error(message);
+
+                    new AlertDialog.Builder(context).setTitle("提示").setMessage(message).setPositiveButton("确定", null).show();
+                }
+            });
         }
     }
 
@@ -729,6 +896,7 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
         public final ObservableField<String> phone = new ObservableField<>();
         public final ObservableField<String> description = new ObservableField<>();
         public final ObservableField<String> members = new ObservableField<>();
+        public final ObservableBoolean showFinishedButton = new ObservableBoolean();
 
         public final ObservableField<SimpleRecycleViewAdapter> documentAdapter = new ObservableField<>();
         public final ObservableField<SimpleRecycleViewAdapter> pictureAdapter = new ObservableField<>();
@@ -900,6 +1068,37 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
             postFiles(fileList);
         }
 
+        public void onFinishedClicked(View view){
+            new AlertDialog.Builder(context).setTitle("提示").setMessage("确认完成案件调查，进入下一个流程吗？").setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    try{
+                        JSONObject jsonUser = new JSONObject();
+                        jsonUser.put("id", UserData.getInstance().getId());
+                        jsonUser.put("officeId", UserData.getInstance().getOfficeId());
+
+                        JSONObject jsonCase = new JSONObject();
+                        jsonCase.put("id", id);
+                        jsonCase.put("step", "2,1");
+
+                        JSONObject jsonData = new JSONObject();
+                        jsonData.put("user", jsonUser);
+                        jsonData.put("legalCase", jsonCase);
+
+                        NetworkAccessKit.postData(context, ApiKit.URL_LEGAL_CASE_APPROVE, jsonData, new NetworkAccessKit.DefaultCallback<JSONObject>() {
+                            @Override
+                            public void success(JSONObject data) {
+                                Toast.makeText(context, "调查完成，进入下一流程。", Toast.LENGTH_LONG).show();
+                                ((Activity)context).finish();
+                            }
+                        });
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
+                }
+            }).setNegativeButton("取消", null).show();
+        }
+
         public void onAttachmentClicked(View view){
             new AlertDialog.Builder(view.getContext()).setItems(R.array.attachmentSource, new DialogInterface.OnClickListener() {
                 @Override
@@ -935,93 +1134,104 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
         }
 
         private void postFiles(final List<Map<String, Object>> fileList){
-            if(fileList.size()<=0) {
-                try {
-                    JSONObject jsonData = new JSONObject();
+            if(fileList.size()>0) {
+                Map<String, Object> map = fileList.remove(0);
+                final AttachmentViewModel viewModel = (AttachmentViewModel) map.get("viewModel");
+                File file = viewModel.localFile.get();
 
-                    JSONObject legalCaseObject = new JSONObject();
-                    legalCaseObject.put("id", id);
+                NetworkAccessKit.uploadFile(file, new NetworkAccessKit.DefaultCallback<JSONObject>() {
+                    @Override
+                    public void success(JSONObject data) {
+                        String remoteUrl = data.optString("path");
 
-                    SimpleRecycleViewAdapter<AttachmentViewModel> adapter = (SimpleRecycleViewAdapter<AttachmentViewModel>) binding.documentRecyclerView.getAdapter();
-                    List<AttachmentViewModel> datas = adapter.getData();
-                    JSONArray fileArray = new JSONArray();
-                    for (AttachmentViewModel data : datas) {
-                        if (data.type.get() == AttachmentViewModel.TYPE_ITEM) {
-                            fileArray.put(data.remoteUrl.get());
-                        }
+                        viewModel.remoteUrl.set(remoteUrl);
+                        viewModel.localFile.set(null);
+
+                        postFiles(fileList);
                     }
-                    legalCaseObject.put("documents", fileArray);
 
-                    adapter = (SimpleRecycleViewAdapter<AttachmentViewModel>) binding.pictureRecyclerView.getAdapter();
-                    datas = adapter.getData();
-                    fileArray = new JSONArray();
-                    for (AttachmentViewModel data : datas) {
-                        if (data.type.get() == AttachmentViewModel.TYPE_ITEM) {
-                            fileArray.put(data.remoteUrl.get());
+                    @Override
+                    public void failure(int code, String remark) {
+                        super.failure(code, remark);
+
+                        if(code==CODE_INVALID_FILE_TYPE){
+                            Toast.makeText(context,"不支持的文件格式。",Toast.LENGTH_LONG).show();
+                        }else{
+                            Toast.makeText(context,remark,Toast.LENGTH_LONG).show();
                         }
+
+                        postFiles(fileList);
                     }
-                    legalCaseObject.put("photos", fileArray);
+                }, new NetworkAccessKit.ProgressCallback() {
+                    @Override
+                    public void onProgress(long bytesWritter, long totalSize) {
+                        Log.d("TEST", "写入：" + bytesWritter + ", 总计：" + totalSize);
 
-                    adapter = (SimpleRecycleViewAdapter<AttachmentViewModel>) binding.videoRecyclerView.getAdapter();
-                    datas = adapter.getData();
-                    fileArray = new JSONArray();
-                    for (AttachmentViewModel data : datas) {
-                        if (data.type.get() == AttachmentViewModel.TYPE_ITEM) {
-                            fileArray.put(data.remoteUrl.get());
-                        }
+                        long percent = bytesWritter * 100 / totalSize;
+
+                        viewModel.progress.set(percent);
                     }
-                    legalCaseObject.put("videos", fileArray);
-
-                    jsonData.put("legalCase", legalCaseObject);
-
-                    JSONObject userObject = new JSONObject();
-                    userObject.put("id", UserData.getInstance().getId());
-                    userObject.put("officeId", UserData.getInstance().getOfficeId());
-
-                    jsonData.put("user", userObject);
-
-                    NetworkAccessKit.postData(context, ApiKit.URL_LEGAL_CASE_UPDATE_FILES, jsonData, new NetworkAccessKit.DefaultCallback() {
-                        @Override
-                        public void success(Object data) {
-                            Toast.makeText(context, "文件更新成功。", Toast.LENGTH_LONG).show();
-                            ((Activity) context).finish();
-                        }
-                    });
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                return;
+                });
+            }else{
+                updateLegalCase();
             }
+        }
 
-            Map<String, String> data = new HashMap<>();
-            data.put("legalCaseId", "aaaaaaa");
-            data.put("userId", "bbbbbbb");
+        private void updateLegalCase(){
+            try {
+                JSONObject jsonData = new JSONObject();
 
-            Map<String, Object> map = fileList.remove(0);
-            final AttachmentViewModel viewModel = (AttachmentViewModel) map.get("viewModel");
-            File file = viewModel.localFile.get();
+                JSONObject legalCaseObject = new JSONObject();
+                legalCaseObject.put("id", id);
 
-            NetworkAccessKit.uploadFile(data, file, new NetworkAccessKit.DefaultCallback<JSONObject>() {
-                @Override
-                public void success(JSONObject data) {
-                    String remoteUrl = data.optString("path");
-
-                    viewModel.remoteUrl.set(remoteUrl);
-                    viewModel.localFile.set(null);
-
-                    postFiles(fileList);
+                SimpleRecycleViewAdapter<AttachmentViewModel> adapter = (SimpleRecycleViewAdapter<AttachmentViewModel>) binding.documentRecyclerView.getAdapter();
+                List<AttachmentViewModel> datas = adapter.getData();
+                JSONArray fileArray = new JSONArray();
+                for (AttachmentViewModel data : datas) {
+                    if (data.type.get() == AttachmentViewModel.TYPE_ITEM) {
+                        fileArray.put(data.remoteUrl.get());
+                    }
                 }
-            }, new NetworkAccessKit.ProgressCallback() {
-                @Override
-                public void onProgress(long bytesWritter, long totalSize) {
-                    Log.d("TEST", "写入：" + bytesWritter + ", 总计：" + totalSize);
+                legalCaseObject.put("documents", fileArray);
 
-                    long percent = bytesWritter * 100 / totalSize;
-
-                    viewModel.progress.set(percent);
+                adapter = (SimpleRecycleViewAdapter<AttachmentViewModel>) binding.pictureRecyclerView.getAdapter();
+                datas = adapter.getData();
+                fileArray = new JSONArray();
+                for (AttachmentViewModel data : datas) {
+                    if (data.type.get() == AttachmentViewModel.TYPE_ITEM) {
+                        fileArray.put(data.remoteUrl.get());
+                    }
                 }
-            });
+                legalCaseObject.put("photos", fileArray);
+
+                adapter = (SimpleRecycleViewAdapter<AttachmentViewModel>) binding.videoRecyclerView.getAdapter();
+                datas = adapter.getData();
+                fileArray = new JSONArray();
+                for (AttachmentViewModel data : datas) {
+                    if (data.type.get() == AttachmentViewModel.TYPE_ITEM) {
+                        fileArray.put(data.remoteUrl.get());
+                    }
+                }
+                legalCaseObject.put("videos", fileArray);
+
+                jsonData.put("legalCase", legalCaseObject);
+
+                JSONObject userObject = new JSONObject();
+                userObject.put("id", UserData.getInstance().getId());
+                userObject.put("officeId", UserData.getInstance().getOfficeId());
+
+                jsonData.put("user", userObject);
+
+                NetworkAccessKit.postData(context, ApiKit.URL_LEGAL_CASE_UPDATE_FILES, jsonData, new NetworkAccessKit.DefaultCallback() {
+                    @Override
+                    public void success(Object data) {
+                        Toast.makeText(context, "文件更新成功。", Toast.LENGTH_LONG).show();
+                        ((Activity) context).finish();
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 }

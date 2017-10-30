@@ -87,7 +87,7 @@ public class CustomDatabindingProperty {
     public static void loadImage(ImageView imageView, String url) {
         if (url != null) {
             if (url.toLowerCase().startsWith("http")) {
-                Picasso.with(imageView.getContext()).load(url).placeholder(R.drawable.ic_picasso_placeholder).into(imageView);
+                Picasso.with(imageView.getContext()).load(url).placeholder(R.drawable.ic_default_image).into(imageView);
             } else {
                 String ext = url.substring(url.lastIndexOf('.')).trim().toUpperCase();
                 if(".JPG.JPEG.GIF.PNG.BMP.WBMP".indexOf(ext)>=0) {

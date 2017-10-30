@@ -18,8 +18,6 @@ import android.widget.ImageView;
 import java.io.File;
 
 import kl.law.inspector.R;
-import kl.law.inspector.tools.ApiKit;
-import kl.law.inspector.tools.UploadFileTask;
 
 import static android.app.Activity.RESULT_OK;
 
@@ -67,8 +65,8 @@ public class Fragment1 extends Fragment {
                 //File imageFile = new File(imagePath, "20130405_IMG_0820.JPG");
                 Log.d("TEST", imageFile.exists()+"=====");
 
-                UploadFileTask task = new UploadFileTask(ApiKit.URL_UPLOAD_IMAGE, imageFile);
-                task.execute();
+//                UploadFileTask task = new UploadFileTask(ApiKit.URL_UPLOAD_IMAGE, imageFile);
+//                task.execute();
 
 
 //                MultipartRequest request = new MultipartRequest(ApiKit.URL_UPLOAD_IMAGE, "file", imageFile, new Response.Listener<String>() {

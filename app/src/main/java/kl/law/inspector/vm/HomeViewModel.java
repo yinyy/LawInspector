@@ -18,6 +18,7 @@ import android.view.animation.Animation;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -53,11 +54,18 @@ public class HomeViewModel extends AbstractViewModel<FragmentHomeBinding>{
         fetchNotifications();
         initTodo();
 
+        initTodoList();
+
         fetchLegalCaseTodoList();
         fetchDocumentTodoList();
         fetchReminderTodoList();
     }
 
+    public void onResume(){
+        fetchLegalCaseTodoList();
+        fetchDocumentTodoList();
+        fetchReminderTodoList();
+    }
     private void fetchNotifications() {
         NetworkAccessKit.getData(context, ApiKit.URL_ARTICLE(ApiKit.ArticleCategory.NOTIFICATION), new NetworkAccessKit.DefaultCallback<JSONArray>() {
             @Override
@@ -180,14 +188,35 @@ public class HomeViewModel extends AbstractViewModel<FragmentHomeBinding>{
         binding.todoRecycclerView.setAdapter(adapter);
     }
 
+    private void initTodoList(){
+        List<LegalCaseViewModel.ItemViewModel> datasLegalCase = new LinkedList<>();
+        RefreshRecyclerViewAdapter<LegalCaseViewModel.ItemViewModel> adapterLegalCase = new RefreshRecyclerViewAdapter<>(datasLegalCase, R.layout.item_legal_case, R.layout.item_footer_refresh, BR.viewModel, BR.footer);
+        adapterLegalCase.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
+        binding.legalCaseTodoListRecyclerView.setAdapter(adapterLegalCase);
+
+        List<DocumentViewModel.ItemViewModel> datasDocument = new LinkedList<>();
+        RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel> adapterDocument = new RefreshRecyclerViewAdapter<>(datasDocument, R.layout.item_document, R.layout.item_footer_refresh, BR.viewModel, BR.footer);
+        adapterDocument.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
+        binding.documentTodoListRecyclerView.setAdapter(adapterDocument);
+
+        List<DocumentViewModel.ItemViewModel> datasReminder = new LinkedList<>();
+        RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel> adapterReminder = new RefreshRecyclerViewAdapter<>(datasReminder, R.layout.item_document, R.layout.item_footer_refresh, BR.viewModel, BR.footer);
+        adapterReminder.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
+        binding.reminderTodoListRecyclerView.setAdapter(adapterReminder);
+    }
+
     private void fetchLegalCaseTodoList(){
+        final SimpleRecycleViewAdapter<TodoViewModel> todoAdapter = (SimpleRecycleViewAdapter<TodoViewModel>) binding.todoRecycclerView.getAdapter();
+        final List<TodoViewModel> todoDatas = todoAdapter.getData();
+
+        final RefreshRecyclerViewAdapter<LegalCaseViewModel.ItemViewModel> adapter = (RefreshRecyclerViewAdapter<LegalCaseViewModel.ItemViewModel>) binding.legalCaseTodoListRecyclerView.getAdapter();
+        adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
+        final List<LegalCaseViewModel.ItemViewModel> datas = adapter.getData();
+        datas.clear();
+
         NetworkAccessKit.getData(context, ApiKit.URL_LEGAL_CASE_TODO_LIST(UserData.getInstance().getId()), new NetworkAccessKit.DefaultCallback<JSONArray>() {
             @Override
             public void success(JSONArray jsonArray) {
-                SimpleRecycleViewAdapter<TodoViewModel> todoAdapter = (SimpleRecycleViewAdapter<TodoViewModel>) binding.todoRecycclerView.getAdapter();
-                List<TodoViewModel> todoDatas = todoAdapter.getData();
-
-                List<LegalCaseViewModel.ItemViewModel> datas = new LinkedList<>();
                 if(jsonArray!=null) {
                     todoDatas.get(0).count.set(jsonArray.length());
                     todoAdapter.notifyDataSetChanged();
@@ -203,90 +232,109 @@ public class HomeViewModel extends AbstractViewModel<FragmentHomeBinding>{
                         vm.subtitle.set(description.length() > 20 ? description.substring(0, 20) : description);
 
                         vm.serial.set(jsonObject.optString("caseDocNo"));
-                        vm.remainder.set("剩余天数");
-                        vm.progress.set("流程状态");
-                        vm.progressCode.set(3);
-                        vm.setClickAction(LegalCaseViewModel.ItemViewModel.CLICK_ACTION_SIGN);
+
+                        String step = jsonObject.optString("step");
+                        String[] values= step.split(",");
+
+                        vm.progress.set(MessageFormat.format("{0} - {1}", values[2], values[3]));
+                        vm.progressCode.set(Integer.parseInt(MessageFormat.format("{0}{1}", values[0], values[1])));
+
+                        //TODO:剩余天数
+                        vm.remainder.set(MessageFormat.format("{0}{1}", values[0], values[1]));
+
+
+                        if(vm.progressCode.get()/10==2){
+                            vm.setClickAction(LegalCaseViewModel.ItemViewModel.CLICK_ACTION_FILE);
+                        }else {
+                            vm.setClickAction(LegalCaseViewModel.ItemViewModel.CLICK_ACTION_APPROVE);
+                        }
 
                         datas.add(vm);
                     }
                 }
 
-                RefreshRecyclerViewAdapter<LegalCaseViewModel.ItemViewModel> adapter = new RefreshRecyclerViewAdapter<>(datas, R.layout.item_legal_case, R.layout.item_footer_refresh, BR.viewModel, BR.footer);
                 adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
-                binding.legalCaseTodoListRecyclerView.setAdapter(adapter);
+                adapter.notifyDataSetChanged();
             }
         });
     }
 
     private void fetchDocumentTodoList(){
+        final SimpleRecycleViewAdapter<TodoViewModel> todoAdapter = (SimpleRecycleViewAdapter<TodoViewModel>) binding.todoRecycclerView.getAdapter();
+        final List<TodoViewModel> todoDatas = todoAdapter.getData();
+
+        final RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel> adapter = (RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel>) binding.documentTodoListRecyclerView.getAdapter();
+        adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
+        final List<DocumentViewModel.ItemViewModel> datas = adapter.getData();
+        datas.clear();
+
         NetworkAccessKit.getData(context, ApiKit.URL_DOCUMENT_TODO_LIST(UserData.getInstance().getId()), new NetworkAccessKit.DefaultCallback<JSONArray>() {
             @Override
             public void success(JSONArray jsonArray) {
-                SimpleRecycleViewAdapter<TodoViewModel> todoAdapter = (SimpleRecycleViewAdapter<TodoViewModel>) binding.todoRecycclerView.getAdapter();
-                List<TodoViewModel> todoDatas = todoAdapter.getData();
-
-                List<DocumentViewModel.ItemViewModel> datas = new LinkedList<>();
-                if(jsonArray!=null) {
-                    todoDatas.get(1).count.set(jsonArray.length());
-                    todoAdapter.notifyDataSetChanged();
-
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        try {
-                            JSONObject jsonObject = jsonArray.getJSONObject(i);
-
-                            DocumentViewModel.ItemViewModel vm = new DocumentViewModel.ItemViewModel();
-                            vm.setId(i + "");
-                            vm.title.set("关于某某事情的决定" + i);
-                            vm.created.set("2017/10/05");
-                            vm.progressCode.set(i);
-
-                            datas.add(vm);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-
-                RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel> adapter = new RefreshRecyclerViewAdapter<>(datas, R.layout.item_document, R.layout.item_footer_refresh, BR.viewModel, BR.footer);
-                adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
-                binding.documentTodoListRecyclerView.setAdapter(adapter);
+                //TODO:后期打开
+//                if(jsonArray!=null) {
+//                    todoDatas.get(1).count.set(jsonArray.length());
+//                    todoAdapter.notifyDataSetChanged();
+//
+//                    for (int i = 0; i < jsonArray.length(); i++) {
+//                        try {
+//                            JSONObject jsonObject = jsonArray.getJSONObject(i);
+//
+//                            DocumentViewModel.ItemViewModel vm = new DocumentViewModel.ItemViewModel();
+//                            vm.setId(i + "");
+//                            vm.title.set("关于某某事情的决定" + i);
+//                            vm.created.set("2017/10/05");
+//                            vm.progressCode.set(i);
+//
+//                            datas.add(vm);
+//                        } catch (Exception e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                }
+//
+//                adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
+//                adapter.notifyDataSetChanged();
             }
         });
     }
 
     private void fetchReminderTodoList(){
+        final SimpleRecycleViewAdapter<TodoViewModel> todoAdapter = (SimpleRecycleViewAdapter<TodoViewModel>) binding.todoRecycclerView.getAdapter();
+        final List<TodoViewModel> todoDatas = todoAdapter.getData();
+
+        final RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel> adapter = (RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel>) binding.reminderTodoListRecyclerView.getAdapter();
+        adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
+        final List<DocumentViewModel.ItemViewModel> datas = adapter.getData();
+        datas.clear();
+
         NetworkAccessKit.getData(context, ApiKit.URL_REMINDER_TODO_LIST(UserData.getInstance().getId()), new NetworkAccessKit.DefaultCallback<JSONArray>() {
             @Override
             public void success(JSONArray jsonArray) {
-                SimpleRecycleViewAdapter<TodoViewModel> todoAdapter = (SimpleRecycleViewAdapter<TodoViewModel>) binding.todoRecycclerView.getAdapter();
-                List<TodoViewModel> todoDatas = todoAdapter.getData();
-
-                List<DocumentViewModel.ItemViewModel> datas = new LinkedList<>();
-                if(jsonArray!=null) {
-                    todoDatas.get(2).count.set(jsonArray.length());
-                    todoAdapter.notifyDataSetChanged();
-
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        try {
-                            JSONObject jsonObject = jsonArray.getJSONObject(i);
-
-                            DocumentViewModel.ItemViewModel vm = new DocumentViewModel.ItemViewModel();
-                            vm.setId(i + "");
-                            vm.title.set("关于某某事情的决定" + i);
-                            vm.created.set("2017/10/05");
-                            vm.progressCode.set(i);
-
-                            datas.add(vm);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-
-                RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel> adapter = new RefreshRecyclerViewAdapter<>(datas, R.layout.item_document, R.layout.item_footer_refresh, BR.viewModel, BR.footer);
-                adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
-                binding.reminderTodoListRecyclerView.setAdapter(adapter);
+                //TODO:后期打开
+//                if(jsonArray!=null) {
+//                    todoDatas.get(2).count.set(jsonArray.length());
+//                    todoAdapter.notifyDataSetChanged();
+//
+//                    for (int i = 0; i < jsonArray.length(); i++) {
+//                        try {
+//                            JSONObject jsonObject = jsonArray.getJSONObject(i);
+//
+//                            DocumentViewModel.ItemViewModel vm = new DocumentViewModel.ItemViewModel();
+//                            vm.setId(i + "");
+//                            vm.title.set("关于某某事情的决定" + i);
+//                            vm.created.set("2017/10/05");
+//                            vm.progressCode.set(i);
+//
+//                            datas.add(vm);
+//                        } catch (Exception e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                }
+//
+//                adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
+//                adapter.notifyDataSetChanged();
             }
         });
     }

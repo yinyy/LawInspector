@@ -19,23 +19,28 @@ public class LegalCaseApproveActivity extends AppCompatActivity {
         Intent intent = getIntent();
         String id = intent.getStringExtra("id");
         int progressCode = intent.getIntExtra("progressCode", 0);
+        int stage = progressCode / 10;
+        int step = progressCode % 10;
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        if (progressCode >= 1 && progressCode <= 3) {
+        if (stage == 1) {
             getSupportActionBar().setTitle("案件审批");
-        } else if (progressCode >= 4 && progressCode <= 7) {
+        } else if (stage == 2) {
+            getSupportActionBar().setTitle("案件调查");
+        } else if (stage == 3) {
             getSupportActionBar().setTitle("行政处罚审批");
-        } else if (progressCode >= 8 && progressCode <= 11) {
+        } else if (stage == 4) {
             getSupportActionBar().setTitle("结案登记审批");
         }
 
         ActivityLegalCaseApproveBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_legal_case_approve);
-        binding.setProgressCode(progressCode);
-
         LegalCaseViewModel.ApproveViewModel viewModel = new LegalCaseViewModel.ApproveViewModel(this, binding);
-        viewModel.init(id);
+        viewModel.init(id, stage, step);
 
+        binding.setStage(stage);
+        binding.setStep(step);
         binding.setVariable(BR.viewModel, viewModel);
+        binding.executePendingBindings();
     }
 
     @Override

@@ -30,8 +30,12 @@ import cz.msebera.android.httpclient.Header;
 
 public final class NetworkAccessKit {
     public interface Callback<T>{
+        int CODE_SUCCESS=0;
+        int CODE_INVALID_FILE_TYPE = 40004;
+        int CODE_EMPTY_CONTENT = 44004;
+
         void success(T data);
-        void failure(String remark);
+        void failure(int code, String remark);
         void error(String message);
     }
 
@@ -41,8 +45,8 @@ public final class NetworkAccessKit {
 
     public static abstract class DefaultCallback<T> implements Callback<T>{
         @Override
-        public void failure(String remark) {
-            Log.d("TEST", remark);
+        public void failure(int code, String remark) {
+            Log.d("TEST", code + ", " + remark);
         }
 
         @Override
@@ -70,18 +74,16 @@ public final class NetworkAccessKit {
             public void onResponse(JSONObject response) {
                 int code = response.optInt("code", -1);
                 if (code == -1) {
-                    callback.failure("系统繁忙，请稍后重试。");
-                }else if(code==44004) {
-                    callback.success(null);
+                    callback.error("系统繁忙，请稍后重试。");
                 }else if (code == 0) {
                     String result = response.optString("result", "success");
                     if ("success".equals(result)) {
                         callback.success(response.opt("data"));
                     } else {
-                        callback.failure(response.optString("remark"));
+                        callback.failure(0, response.optString("remark"));
                     }
                 } else {
-                    callback.failure(response.optString("msg"));
+                    callback.failure(response.optInt("code", -1), response.optString("remark"));
                 }
             }
         }, new Response.ErrorListener() {
@@ -99,23 +101,21 @@ public final class NetworkAccessKit {
 
     public static void postData(Context context, String url, JSONObject data, final Callback callback) {
         RequestQueue queue = getVolleyRequest(context);
-        queue.add(new JsonObjectRequest(Request.Method.POST, url, data, new Response.Listener<JSONObject>() {
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, data, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
                 int code = response.optInt("code", -1);
                 if (code == -1) {
-                    callback.failure("系统繁忙，请稍后重试。");
-                } else if(code==44004) {
-                    callback.failure("服务器没有接收到数据。");
+                    callback.error("系统繁忙，请稍后重试。");
                 }else if (code == 0) {
                     String result = response.optString("result", "success");
                     if ("success".equals(result)) {
                         callback.success(response.opt("data"));
                     } else {
-                        callback.failure(response.optString("remark"));
+                        callback.failure(0, response.optString("remark"));
                     }
                 } else {
-                    callback.failure(response.optString("msg"));
+                    callback.failure(response.optInt("code", -1), response.optString("remark"));
                 }
             }
         }, new Response.ErrorListener() {
@@ -124,7 +124,9 @@ public final class NetworkAccessKit {
                 error.printStackTrace();
                 callback.error("发生严重错误。");
             }
-        }));
+        });
+        request.setRetryPolicy(new DefaultRetryPolicy(10*1000, 1, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+        queue.add(request);
     }
 
     private static AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
@@ -166,7 +168,7 @@ public final class NetworkAccessKit {
             return;
         }
 
-        asyncHttpClient.post(ApiKit.URL_LEGAL_CASE_UPLOAD_FILE, params, new AsyncHttpResponseHandler() {
+        asyncHttpClient.post(ApiKit.URL_UPLOAD_FILE, params, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 try {
@@ -175,7 +177,7 @@ public final class NetworkAccessKit {
 
                     int code = jsonObject.optInt("code");
                     if(code==-1){
-                        callback.failure("系统繁忙。");
+                        callback.error("系统繁忙，请稍后重试。");
                     }else if(code==0){
                         String result = "success";
                         if(jsonObject.has("result")){
@@ -185,15 +187,15 @@ public final class NetworkAccessKit {
                         if("success".equals(result)){
                             callback.success(jsonObject.opt("data"));
                         }else{
-                            callback.failure(jsonObject.optString("remark"));
+                            callback.failure(0, jsonObject.optString("remark"));
                         }
                     }else{
-                        callback.failure(jsonObject.optString("remark"));
+                        callback.failure(jsonObject.optInt("code"),  jsonObject.optString("remark"));
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
 
-                    callback.failure(e.getMessage());
+                    callback.error(e.getMessage());
                 }
             }
 

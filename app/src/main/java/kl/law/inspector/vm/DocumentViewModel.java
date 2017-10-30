@@ -13,16 +13,22 @@ import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import kl.law.inspector.BR;
 import kl.law.inspector.R;
@@ -178,7 +184,9 @@ public class DocumentViewModel extends AbstractViewModel<FragmentDocumentBinding
             }
 
             @Override
-            public void failure(String remark) {
+            public void failure(int code, String remark) {
+                super.failure(code, remark);
+
                 scrollListener[index].clearLoading();
                 Toast.makeText(context, remark, Toast.LENGTH_LONG).show();
             }
@@ -303,129 +311,247 @@ public class DocumentViewModel extends AbstractViewModel<FragmentDocumentBinding
         }
 
         public void onSubmit(View view){
-            Toast.makeText(context,"保存公文。", Toast.LENGTH_LONG).show();
-            ((Activity)context).finish();
+            view.setBackgroundResource(R.drawable.bg_button_disabled);
+            ((Button)view).setEnabled(false);
+
+            //获取待上传的文件列表
+            List<Map<String, Object>> fileList = new LinkedList<>();
+
+            SimpleRecycleViewAdapter<AttachmentViewModel> adapter = (SimpleRecycleViewAdapter<AttachmentViewModel>) binding.recyclerView.getAdapter();
+            List<AttachmentViewModel> datas = adapter.getData();
+            for(AttachmentViewModel attachmentViewModel : datas){
+                if(attachmentViewModel.type.get()==AttachmentViewModel.TYPE_ITEM){
+                    if(attachmentViewModel.localFile.get()!=null){
+                        Map<String, Object> m = new HashMap<>();
+                        m.put("viewModel", attachmentViewModel);
+
+                        fileList.add(m);
+                    }
+                }
+            }
+
+            postFiles(fileList);
+        }
+
+        private void postFiles(final List<Map<String, Object>> fileList){
+            if(fileList.size()>0) {
+                Map<String, Object> map = fileList.remove(0);
+                final AttachmentViewModel viewModel = (AttachmentViewModel) map.get("viewModel");
+                File file = viewModel.localFile.get();
+
+                NetworkAccessKit.uploadFile(file, new NetworkAccessKit.DefaultCallback<JSONObject>() {
+                    @Override
+                    public void success(JSONObject data) {
+                        String remoteUrl = data.optString("path");
+                        Log.d("TEST", remoteUrl);
+
+                        viewModel.remoteUrl.set(remoteUrl);
+                        viewModel.localFile.set(null);
+
+                        postFiles(fileList);
+                    }
+
+                    @Override
+                    public void failure(int code, String remark) {
+                        super.failure(code, remark);
+
+                        if(code==CODE_INVALID_FILE_TYPE) {
+                            Toast.makeText(context, "不受支持的文件格式。", Toast.LENGTH_LONG).show();
+                        }else{
+                            Toast.makeText(context, remark, Toast.LENGTH_LONG).show();
+                        }
+
+                        postFiles(fileList);
+                    }
+                }, new NetworkAccessKit.ProgressCallback() {
+                    @Override
+                    public void onProgress(long bytesWritter, long totalSize) {
+                        Log.d("TEST", "写入：" + bytesWritter + ", 总计：" + totalSize);
+
+                        long percent = bytesWritter * 100 / totalSize;
+
+                        viewModel.progress.set(percent);
+                    }
+                });
+            }else{
+                createDocumet();
+            }
+        }
+
+        private void createDocumet(){
+            try {
+                JSONObject jsonData = new JSONObject();
+
+                JSONObject documentObject = new JSONObject();
+                SimpleRecycleViewAdapter<AttachmentViewModel> adapter = (SimpleRecycleViewAdapter<AttachmentViewModel>) binding.recyclerView.getAdapter();
+                List<AttachmentViewModel> datas = adapter.getData();
+                JSONArray fileArray = new JSONArray();
+                for (AttachmentViewModel data : datas) {
+                    if (data.type.get() == AttachmentViewModel.TYPE_ITEM) {
+                        fileArray.put(data.remoteUrl.get());
+                    }
+                }
+                documentObject.put("files", fileArray);
+                documentObject.put("title", title.get());
+                jsonData.put("document", documentObject);
+
+                JSONObject userObject = new JSONObject();
+                userObject.put("id", UserData.getInstance().getId());
+                userObject.put("officeId", UserData.getInstance().getOfficeId());
+                jsonData.put("user", userObject);
+
+                NetworkAccessKit.postData(context, ApiKit.URL_DOCUMENT_CREATE, jsonData, new NetworkAccessKit.DefaultCallback() {
+                    @Override
+                    public void success(Object data) {
+                        Toast.makeText(context, "公文创建成功。", Toast.LENGTH_LONG).show();
+                        ((Activity) context).finish();
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
     public static class DetailViewModel extends AbstractViewModel<ActivityDocumentDetailBinding> {
         public final ObservableField<String> title = new ObservableField<>();
         public final ObservableInt progressCode = new ObservableInt();
-        public final ObservableField<String> approverOpinion = new ObservableField<>();
+        public final ObservableField<String> opinion = new ObservableField<>();
 
         public final ObservableField<SimpleRecycleViewAdapter> fileAdapter = new ObservableField<>();
         public final ObservableField<SimpleRecycleViewAdapter> approverAdapter = new ObservableField<>();
         public final ObservableField<SimpleRecycleViewAdapter> readerAdapter = new ObservableField<>();
 
+        private String id;
+
         public DetailViewModel(Context context, ActivityDocumentDetailBinding binding) {
             super(context, binding);
         }
 
-        public void init(String id) {
-            progressCode.set(4);
-            title.set("xxx事件");
-
-            List<AttachmentViewModel> datas = new ArrayList<>();
-            for(int i=0;i<10;i++) {
-                String attachment = "http://img1.gtimg.com/cq/pics/hv1/140/248/1766/114897530.jpg";
-                AttachmentViewModel flivm = new AttachmentViewModel(context);
-                if(FileKit.isBitmap(attachment) || FileKit.isVideo(attachment)){
-                    flivm.imageUrl.set(attachment);
-                }else{
-                    flivm.imageRes.set(FileKit.getFileIcon(attachment));
-                }
-                flivm.type.set(AttachmentViewModel.TYPE_ITEM);
-                flivm.id.set(i+"");
-                flivm.showDelete.set(false);
-                datas.add(flivm);
-            }
-
-            SimpleRecycleViewAdapter<AttachmentViewModel> adapter1 = new SimpleRecycleViewAdapter<>(datas, R.layout.item_attachment, BR.viewModel);
-            fileAdapter.set(adapter1);
-
-            List<MemberViewModel> ps = new ArrayList<>();
-            for(int i=1;i<=10;i++) {
-                MemberViewModel mvm = new MemberViewModel();
-                mvm.setId(i+"");
-                mvm.name.set("审核" + i);
-                mvm.selected.set(false);
-                ps.add(mvm);
-            }
-
-            SimpleRecycleViewAdapter<MemberViewModel> adapter2 = new SimpleRecycleViewAdapter<>(ps, R.layout.member_list_item, BR.viewModel);
-            approverAdapter.set(adapter2);
-
-            ps = new ArrayList<>();
-            for(int i=1;i<=10;i++) {
-                MemberViewModel mvm = new MemberViewModel();
-                mvm.setId(i+"");
-                mvm.name.set("阅读" + i);
-                mvm.selected.set(false);
-                ps.add(mvm);
-            }
-
-            SimpleRecycleViewAdapter<MemberViewModel> adapter3 = new SimpleRecycleViewAdapter<>(ps, R.layout.member_list_item, BR.viewModel);
-            readerAdapter.set(adapter3);
-        }
-
-        public void inittttt(String id, int progressCode) {
+        public void init(String id, int progressCode) {
+            this.id = id;
             this.progressCode.set(progressCode);
-            title.set("xxx事件");
-            approverOpinion.set("这里是审批人的意见。将要发送给张三、李四、王五、赵六传阅。");
 
-            List<AttachmentViewModel> datas = new ArrayList<>();
-            for(int i=0;i<10;i++) {
-                String attachment = "http://img1.gtimg.com/cq/pics/hv1/140/248/1766/114897530.jpg";
-                AttachmentViewModel flivm = new AttachmentViewModel(context);
-                if(FileKit.isBitmap(attachment) || FileKit.isVideo(attachment)){
-                    flivm.imageUrl.set(attachment);
-                }else{
-                    flivm.imageRes.set(FileKit.getFileIcon(attachment));
+            NetworkAccessKit.getData(context, ApiKit.URL_DOCUMENT_DETAIL(id), new NetworkAccessKit.DefaultCallback<JSONObject>() {
+                @Override
+                public void success(JSONObject data) {
+                    title.set(data.optString("title"));
+                    opinion.set(data.optString("opinion"));
+
+                    List<AttachmentViewModel> datas = new ArrayList<>();
+                    JSONArray array = data.optJSONArray("photos");
+                    for (int i = 0; i < array.length(); i++) {
+                        String attachment = array.optString(i);
+                        AttachmentViewModel flivm = new AttachmentViewModel(context);
+                        if (FileKit.isBitmap(attachment) || FileKit.isVideo(attachment)) {
+                            flivm.imageUrl.set(attachment);
+                        } else {
+                            flivm.imageRes.set(FileKit.getFileIcon(attachment));
+                        }
+                        flivm.type.set(AttachmentViewModel.TYPE_ITEM);
+                        flivm.showDelete.set(false);
+                        datas.add(flivm);
+                    }
+
+                    SimpleRecycleViewAdapter<AttachmentViewModel> adapter1 = new SimpleRecycleViewAdapter<>(datas, R.layout.item_attachment, BR.viewModel);
+                    fileAdapter.set(adapter1);
+
+                    List<MemberViewModel> ps = new ArrayList<>();
+                    array = data.optJSONArray("approvals");
+                    for (int i = 0; i < array.length(); i++) {
+                        JSONObject obj = array.optJSONObject(i);
+
+                        MemberViewModel mvm = new MemberViewModel();
+                        mvm.setId(obj.optString("id"));
+                        mvm.name.set(obj.optString("name"));
+                        mvm.selected.set(false);
+                        ps.add(mvm);
+                    }
+                    SimpleRecycleViewAdapter<MemberViewModel> adapter2 = new SimpleRecycleViewAdapter<>(ps, R.layout.member_list_item, BR.viewModel);
+                    approverAdapter.set(adapter2);
+
+                    ps = new ArrayList<>();
+                    array = data.optJSONArray("readers");
+                    for (int i = 0; i < array.length(); i++) {
+                        JSONObject obj = array.optJSONObject(i);
+
+                        MemberViewModel mvm = new MemberViewModel();
+                        mvm.setId(obj.optString("id"));
+                        mvm.name.set(obj.optString("name"));
+                        mvm.selected.set(false);
+                        ps.add(mvm);
+                    }
+
+                    SimpleRecycleViewAdapter<MemberViewModel> adapter3 = new SimpleRecycleViewAdapter<>(ps, R.layout.member_list_item, BR.viewModel);
+                    readerAdapter.set(adapter3);
                 }
-                flivm.type.set(AttachmentViewModel.TYPE_ITEM);
-                flivm.id.set(i+"");
-                flivm.showDelete.set(false);
-                datas.add(flivm);
-            }
-
-            SimpleRecycleViewAdapter<AttachmentViewModel> adapter1 = new SimpleRecycleViewAdapter<>(datas, R.layout.item_attachment, BR.viewModel);
-            fileAdapter.set(adapter1);
-
-            List<MemberViewModel> ps = new ArrayList<>();
-            for(int i=1;i<=10;i++) {
-                MemberViewModel mvm = new MemberViewModel();
-                mvm.setId(i+"");
-                mvm.name.set("审核" + i);
-                mvm.selected.set(false);
-                ps.add(mvm);
-            }
-
-            SimpleRecycleViewAdapter<MemberViewModel> adapter2 = new SimpleRecycleViewAdapter<>(ps, R.layout.member_list_item, BR.viewModel);
-            approverAdapter.set(adapter2);
-
-            ps = new ArrayList<>();
-            for(int i=1;i<=10;i++) {
-                MemberViewModel mvm = new MemberViewModel();
-                mvm.setId(i+"");
-                mvm.name.set("阅读" + i);
-                mvm.selected.set(false);
-                ps.add(mvm);
-            }
-
-            SimpleRecycleViewAdapter<MemberViewModel> adapter3 = new SimpleRecycleViewAdapter<>(ps, R.layout.member_list_item, BR.viewModel);
-            readerAdapter.set(adapter3);
+            });
         }
 
-        public void onSendClicked(View view){
-            Toast.makeText(view.getContext(), "发送", Toast.LENGTH_LONG).show();
-        }
+        public void onSubmitClicked(View view) {
+            try {
+                JSONObject jsonData = new JSONObject();
+                JSONObject userObject = new JSONObject();
+                userObject.put("id", UserData.getInstance().getId());
+                userObject.put("officeId", UserData.getInstance().getOfficeId());
+                jsonData.put("user", userObject);
 
-        public void onFinishClicked(View view){
-            Toast.makeText(view.getContext(), "完成", Toast.LENGTH_LONG).show();
-        }
+                JSONObject documentObject = new JSONObject();
+                documentObject.put("id", id);
+                documentObject.put("progressCode", progressCode.get());
 
-        public void onReadClicked(View view){
-            Toast.makeText(view.getContext(), "已阅读", Toast.LENGTH_LONG).show();
+                if (progressCode.get() == 1) {
+                    MemberViewModel approvalViewModel = null;
+                    SimpleRecycleViewAdapter<MemberViewModel> adapter = (SimpleRecycleViewAdapter<MemberViewModel>) binding.approverRecyclerView.getAdapter();
+                    List<MemberViewModel> datas = adapter.getData();
+                    for (MemberViewModel vm : datas) {
+                        if (vm.selected.get()) {
+                            approvalViewModel = vm;
+                            break;
+                        }
+                    }
+
+                    if (approvalViewModel == null) {
+                        Toast.makeText(context, "请选择审批人。", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+
+                    documentObject.put("approverId", approvalViewModel.id);
+                } else if (progressCode.get() == 2) {
+                    documentObject.put("opinion", opinion.get());
+                } else if (progressCode.get() == 3) {
+                    List<String> readers = new LinkedList<>();
+
+                    MemberViewModel readerViewModel = null;
+                    SimpleRecycleViewAdapter<MemberViewModel> adapter = (SimpleRecycleViewAdapter<MemberViewModel>) binding.readerRecyclerView.getAdapter();
+                    List<MemberViewModel> datas = adapter.getData();
+                    for (MemberViewModel vm : datas) {
+                        if (vm.selected.get()) {
+                            readers.add(vm.id);
+                        }
+                    }
+
+                    if (readers.size() == 0) {
+                        Toast.makeText(context, "请选择传阅人。", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+
+                    documentObject.put("readerIds", new JSONArray(readers));
+                } else if (progressCode.get() == 4) {
+
+                }
+                jsonData.put("document", documentObject);
+
+                NetworkAccessKit.postData(context, ApiKit.URL_DOCUMENT_APPROVE, jsonData, new NetworkAccessKit.DefaultCallback() {
+                    @Override
+                    public void success(Object data) {
+                        Toast.makeText(context, "公文提交成功。", Toast.LENGTH_LONG).show();
+                        ((Activity) context).finish();
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 

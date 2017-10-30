@@ -8,7 +8,10 @@
             name="viewModel"
             type="kl.law.inspector.vm.LegalCaseViewModel.ApproveViewModel"/>
         <variable
-            name="progressCode"
+            name="stage"
+            type="Integer"/>
+        <variable
+            name="step"
             type="Integer"/>
     </data>
 
@@ -17,8 +20,7 @@
             android:focusable="true"
             android:focusableInTouchMode="true">
 
-            <LinearLayout style="@style/MyApp.ContentLine"
-                android:visibility="@{progressCode>=4?View.VISIBLE:View.GONE}">
+            <LinearLayout style="@style/MyApp.ContentLine">
                 <TextView android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@{viewModel.serial}"
@@ -28,6 +30,13 @@
                     android:layout_marginTop="12dp"
                     android:layout_marginBottom="12dp"
                     android:textStyle="bold"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine">
+                <TextView style="@style/MyApp.Label"
+                    android:text="案件标题："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.title}"/>
             </LinearLayout>
 
             <LinearLayout style="@style/MyApp.ContentLine">
@@ -72,17 +81,15 @@
                     android:text="@{viewModel.members}"/>
             </LinearLayout>
 
-
             <LinearLayout style="@style/MyApp.ContentLine"
-                android:visibility="@{progressCode==5 || progressCode==6 || progressCode==7 || progressCode==9 || progressCode==10 || progressCode==11?View.VISIBLE:View.GONE}">
+                android:visibility="@{stage==1?View.GONE:View.VISIBLE}">
                 <TextView style="@style/MyApp.Label"
                     android:text="承办人意见："/>
                 <TextView style="@style/MyApp.Content"
                     android:text="@{viewModel.memberOpinion}"/>
             </LinearLayout>
 
-            <LinearLayout style="@style/MyApp.ContentLine"
-                android:visibility="@{progressCode==2 || progressCode==3 || progressCode==6  || progressCode==7 || progressCode==10 || progressCode==11?View.VISIBLE:View.GONE}">
+            <LinearLayout style="@style/MyApp.ContentLine">
                 <TextView style="@style/MyApp.Label"
                     android:text="承办机构意见："/>
                 <TextView style="@style/MyApp.Content"
@@ -90,54 +97,74 @@
             </LinearLayout>
 
             <LinearLayout style="@style/MyApp.ContentLine"
-                android:visibility="@{progressCode==3 || progressCode==7 || progressCode==11?View.VISIBLE:View.GONE}">
+                android:visibility="@{stage&gt;=3?View.VISIBLE:View.GONE}">
+                <TextView style="@style/MyApp.Label"
+                    android:text="案管中心意见："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.centerOpinion}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine"
+                android:visibility="@{stage&lt;=3?View.VISIBLE:View.GONE}">
                 <TextView style="@style/MyApp.Label"
                     android:text="分管领导意见："/>
                 <TextView style="@style/MyApp.Content"
                     android:text="@{viewModel.branchOpioion}"/>
             </LinearLayout>
 
-            <!--<LinearLayout style="@style/MyApp.ContentLine">-->
-                <!--<TextView style="@style/MyApp.Label"-->
-                    <!--android:text="主管领导意见："/>-->
-                <!--<TextView style="@style/MyApp.Content"-->
-                    <!--android:text="@{viewModel.primaryOpinion}"/>-->
-            <!--</LinearLayout>-->
+            <LinearLayout style="@style/MyApp.ContentLine">
+                <TextView style="@style/MyApp.Label"
+                    android:text="主要领导意见："/>
+                <TextView style="@style/MyApp.Content"
+                    android:text="@{viewModel.primaryOpinion}"/>
+            </LinearLayout>
+
+
 
             <LinearLayout style="@style/MyApp.ContentLine"
                 android:layout_marginTop="12dp"
-                android:visibility="@{progressCode==1 || progressCode==5 || progressCode==9?View.VISIBLE:View.GONE}">
+                android:visibility="@{step==2?View.VISIBLE:View.GONE}">
                 <TextView style="@style/MyApp.Label"
                     android:text="承办机构意见："/>
                 <EditText style="@style/MyApp.Content"
-                    android:hint="请输入承办机构意见"
+                    android:hint="请输入意见"
                     android:text="@={viewModel.departmentOpinion}"/>
             </LinearLayout>
 
             <LinearLayout style="@style/MyApp.ContentLine"
                 android:layout_marginTop="12dp"
-                android:visibility="@{progressCode==2 || progressCode==6 || progressCode==10?View.VISIBLE:View.GONE}">
+                android:visibility="@{step==3?View.VISIBLE:View.GONE}">
+                <TextView style="@style/MyApp.Label"
+                    android:text="案管中心意见："/>
+                <EditText style="@style/MyApp.Content"
+                    android:hint="请输入意见"
+                    android:text="@={viewModel.centerOpinion}"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine"
+                android:layout_marginTop="12dp"
+                android:visibility="@{step==4?View.VISIBLE:View.GONE}">
                 <TextView style="@style/MyApp.Label"
                     android:text="分管领导意见："/>
                 <EditText  style="@style/MyApp.Content"
-                    android:hint="请输入分管意见"
+                    android:hint="请输入意见"
                     android:text="@={viewModel.branchOpioion}"/>
             </LinearLayout>
 
             <LinearLayout style="@style/MyApp.ContentLine"
                 android:layout_marginTop="12dp"
-                android:visibility="@{progressCode==3 || progressCode==7 || progressCode==11?View.VISIBLE:View.GONE}">
+                android:visibility="@{step==5?View.VISIBLE:View.GONE}">
                 <TextView style="@style/MyApp.Label"
-                    android:text="主管领导意见："/>
+                    android:text="主要领导意见："/>
                 <EditText  style="@style/MyApp.Content"
-                    android:hint="请输入主管领导意见"
+                    android:hint="请输入意见"
                     android:text="@={viewModel.primaryOpinion}"/>
             </LinearLayout>
 
             <LinearLayout style="@style/MyApp.ContentLine"
                 android:orientation="vertical"
                 android:layout_marginTop="12dp"
-                android:visibility="@{progressCode==4?View.VISIBLE:View.GONE}">
+                android:visibility="@{stage==3 &amp;&amp;step==1?View.VISIBLE:View.GONE}">
                 <TextView style="@style/MyApp.Label"
                     android:text="承办人意见　"/>
 
@@ -176,14 +203,14 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:hint="其余文字意见"
-                    android:text="@={viewModel.otherOpinion}"
+                    android:text="@={viewModel.memberOpinion}"
                     android:lines="3" />
             </LinearLayout>
 
             <LinearLayout style="@style/MyApp.ContentLine"
                 android:orientation="vertical"
                 android:layout_marginTop="12dp"
-                android:visibility="@{progressCode==8?View.VISIBLE:View.GONE}">
+                android:visibility="@{stage==4 &amp;&amp; step==1?View.VISIBLE:View.GONE}">
                 <TextView style="@style/MyApp.Label"
                     android:text="承办人意见　"/>
 
@@ -230,7 +257,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:hint="其余文字意见"
-                    android:text="@={viewModel.otherOpinion}"
+                    android:text="@={viewModel.memberOpinion}"
                     android:lines="3" />
             </LinearLayout>
 

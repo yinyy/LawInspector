@@ -88,7 +88,7 @@ public class LoginViewModel extends AbstractViewModel<ActivityLoginBinding> {
     private void login(final Context context, final String username, final String password, final boolean isRemember, final boolean isAutoLogin) {
         DialogKit.showLoadingDialog(context);
 
-        NetworkAccessKit.getData(context, ApiKit.URL_LOGIN(username, password), new NetworkAccessKit.Callback<JSONObject>() {
+        NetworkAccessKit.getData(context, ApiKit.URL_LOGIN(username, password), new NetworkAccessKit.DefaultCallback<JSONObject>() {
             @Override
             public void success(JSONObject userData) {
                 DialogKit.hideLoadingDialog();
@@ -121,7 +121,9 @@ public class LoginViewModel extends AbstractViewModel<ActivityLoginBinding> {
             }
 
             @Override
-            public void failure(String remark) {
+            public void failure(int code, String remark) {
+                super.failure(code, remark);
+
                 DialogKit.hideLoadingDialog();
 
                 Log.d("TEST", remark);

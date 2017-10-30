@@ -28,7 +28,7 @@ public class DocumentDetailActivity extends AppCompatActivity {
         binding.readerRecyclerView.setLayoutManager(new GridLayoutManager(this, 5));
 
         DocumentViewModel.DetailViewModel viewModel = new DocumentViewModel.DetailViewModel(this, binding);
-        viewModel.inittttt(id, progressCode);
+        viewModel.init(id, progressCode);
         binding.setViewModel(viewModel);
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);

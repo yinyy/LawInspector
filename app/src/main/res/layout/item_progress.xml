@@ -32,12 +32,12 @@
                 android:layout_width="16dp"
                 android:layout_height="16dp"
                 android:src="@drawable/ic_progress_point"
-                android:visibility="@{``.equals(viewModel.status)?View.VISIBLE:View.GONE}"/>
+                android:visibility="@{viewModel.statusCode==0?View.VISIBLE:View.GONE}"/>
             <ImageView
                 android:layout_width="16dp"
                 android:layout_height="16dp"
                 android:src="@drawable/ic_progress_point_finished"
-                android:visibility="@{``.equals(viewModel.status)?View.GONE:View.VISIBLE}"/>
+                android:visibility="@{viewModel.statusCode>0?View.VISIBLE:View.GONE}"/>
 
             <ImageView
                 android:layout_width="16dp"
@@ -73,7 +73,7 @@
             android:layout_marginTop="8dp"
             app:layout_constraintBottom_toBottomOf="parent"
             android:layout_marginBottom="8dp"
-            android:src="@{`pass`.equals(viewModel.status)?@drawable/ic_progress_agree:`reject`.equals(viewModel.status)?@drawable/ic_progress_reject:@drawable/ic_progress_waiting}"/>
+            android:src="@{viewModel.statusCode==1?@drawable/ic_progress_agree:viewModel.statusCode==2?@drawable/ic_progress_reject:@drawable/ic_progress_waiting}"/>
 
     </android.support.constraint.ConstraintLayout>
 </layout>

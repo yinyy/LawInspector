@@ -18,7 +18,6 @@ public class LegalCaseDetailActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         String id = intent.getStringExtra("id");
-        int statusCode = intent.getIntExtra("statusCode", 0);
 
         ActivityLegalCaseDetailBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_legal_case_detail);
         LegalCaseViewModel.DetailViewModel viewModel = new LegalCaseViewModel.DetailViewModel(this, binding);

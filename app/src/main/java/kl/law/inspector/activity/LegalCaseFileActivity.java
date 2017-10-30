@@ -28,9 +28,11 @@ public class LegalCaseFileActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         String id = intent.getStringExtra("id");
+        boolean showFinishedButton = intent.getBooleanExtra("showFinishedButton", false);
 
         binding = DataBindingUtil.setContentView(this, R.layout.activity_legal_case_file);
         LegalCaseViewModel.FileViewModel viewModel = new LegalCaseViewModel.FileViewModel(this, binding);
+        viewModel.showFinishedButton.set(showFinishedButton);
         viewModel.init(id);
         binding.setViewModel(viewModel);
 

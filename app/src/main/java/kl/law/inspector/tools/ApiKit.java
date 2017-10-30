@@ -8,8 +8,9 @@ import java.text.MessageFormat;
 
 public class ApiKit {
     //private static final String API_URL_PREFIX = "http://47.93.52.62:8080/klzf2";
-    private static final String API_URL_PREFIX = "http://192.168.31.205:8080/day5";
+    //private static final String API_URL_PREFIX = "http://192.168.31.205:8080/day5";
     //private static final String API_URL_PREFIX = "http://10.0.2.2:8080/law2";
+    private static final String API_URL_PREFIX = "http://10.0.2.2:8080/day5";
 
     public static final class ArticleCategory{
         /**
@@ -34,16 +35,22 @@ public class ApiKit {
         public static final String NOTIFICATION = "360078dd9a304fecaafdf077d95ce287";
     }
 
+    public static String URL_UPLOAD_FILE = MessageFormat.format("{0}/apiv1/oa/files/upload", API_URL_PREFIX);
+    public static String URL_USER= MessageFormat.format("{0}/apiv1/user/info/list", API_URL_PREFIX);
+    public static String URL_LEGAL_CASE_CREATE = MessageFormat.format("{0}/apiv1/oa/case/create", API_URL_PREFIX);
+    public static String URL_LEGAL_CASE_APPROVE = MessageFormat.format("{0}/apiv1/oa/case/approve", API_URL_PREFIX);
+    public static String URL_LEGAL_CASE_FILE_FINISHED = MessageFormat.format("{0}/apiv1/oa/case/filefinished", API_URL_PREFIX);
+    public static String URL_LEGAL_CASE_UPDATE_FILES = MessageFormat.format("{0}/apiv1/oa/case/updatefiles", API_URL_PREFIX);
+    public static String URL_DOCUMENT_CREATE = MessageFormat.format("{0}/apiv1/oa/document/create", API_URL_PREFIX);
+    public static String URL_DOCUMENT_APPROVE = MessageFormat.format("{0}/apiv1/oa/document/approve", API_URL_PREFIX);
+
+
     public static String URL_LOGIN(String username, String password){
         return MessageFormat.format("{0}/apiv1/user/info/login?login_name={1}&password={2}", API_URL_PREFIX, username, password);
     }
 
     public static String URL_ARTICLE(String categoryid){
         return MessageFormat.format("{0}/apiv1/cms/article/list?categoryid={1}", API_URL_PREFIX, categoryid);
-    }
-
-    public static String URL_USER(){
-        return MessageFormat.format("{0}/apiv1/user/info/list", API_URL_PREFIX);
     }
 
     public static String URL_USER(String officeId){
@@ -64,8 +71,6 @@ public class ApiKit {
 
     public static String URL_REMINDER_TODO_LIST(String user_id){
         return MessageFormat.format("{0}/apiv1/oa/case/todolist?user_id={1}", API_URL_PREFIX, user_id);
-
-
     }
 
     public static String URL_LEGAL_CASE_DETAIL(String legalCaseId){
@@ -80,15 +85,6 @@ public class ApiKit {
         return MessageFormat.format("{0}/apiv1/oa/case/getfile?id={1}", API_URL_PREFIX, legalCaseId);
     }
 
-    public static String URL_LEGAL_CASE_CREATE = MessageFormat.format("{0}/apiv1/oa/case/create", API_URL_PREFIX);
-
-    public static String URL_LEGAL_CASE_UPDATE_FILES = MessageFormat.format("{0}/apiv1/oa/case/updatefiles", API_URL_PREFIX);
-
-    public static String URL_LEGAL_CASE_UPLOAD_FILE = MessageFormat.format("{0}/apiv1/oa/files/upload", API_URL_PREFIX);
-
-    public static String URL_UPLOAD_IMAGE = "http://192.168.31.205:8080/law/apiv1/uploadImage.action";
-
-
     public static String URL_DOCUMENT_TODO_LIST(String user_id){
         return MessageFormat.format("{0}/apiv1/oa/case/todolist?user_id={1}", API_URL_PREFIX, user_id);
     }
@@ -99,5 +95,9 @@ public class ApiKit {
 
     public static String URL_DOCUMENT_FILE_LIST(String documentId){
         return MessageFormat.format("{0}/apiv1/oa/document/getfile?id={1}", API_URL_PREFIX, documentId);
+    }
+
+    public static String URL_DOCUMENT_DETAIL(String documentId){
+        return MessageFormat.format("{0}/apiv1/oa/document/get?id={1}", API_URL_PREFIX, documentId);
     }
 }

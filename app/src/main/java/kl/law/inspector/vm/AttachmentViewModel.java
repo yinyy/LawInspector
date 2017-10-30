@@ -61,7 +61,7 @@ public class AttachmentViewModel {
         }else if(recyclerViewId==R.id.videoRecyclerView){
             recyclerViewId = 0x0400;
         }else {
-            recyclerViewId = 0x0000;
+            recyclerViewId = 0x0800;
         }
 
         final int finalRecyclerViewId = recyclerViewId;

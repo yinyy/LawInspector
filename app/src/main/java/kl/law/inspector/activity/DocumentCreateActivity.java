@@ -54,46 +54,43 @@ public class DocumentCreateActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(resultCode == RESULT_OK) {
-            SimpleRecycleViewAdapter<AttachmentViewModel> adapter = (SimpleRecycleViewAdapter<AttachmentViewModel>) binding.recyclerView.getAdapter();
-            List<AttachmentViewModel> datas = adapter.getData();
+        if (resultCode == RESULT_OK) {
+            File file = null;
 
-            if(requestCode== AttachmentViewModel.REQUEST_CAPTURE_PICTURE) {
+            if ((requestCode & 0x00ff) == AttachmentViewModel.REQUEST_CAPTURE_PICTURE) {
                 Bundle extras = data.getExtras();
                 Bitmap bm = (Bitmap) extras.get("data");
-                File file = CameraKit.saveBitmap(this, bm);
-                if (file != null) {
-                    String filename = file.getAbsolutePath();
+                file = CameraKit.saveBitmap(this, bm);
+            } else if ((requestCode & 0x00ff) == AttachmentViewModel.REQUEST_CAPTURE_VIDEO ||
+                    (requestCode & 0x00ff) == AttachmentViewModel.REQUEST_PICK ||
+                    (requestCode & 0x00ff) == AttachmentViewModel.REQUEST_OPEN_FILE) {
+                Uri uri = data.getData();
+                file = FileKit.getFile(this, uri);
+            }
+
+            if (file != null) {
+                String filename = file.getAbsolutePath();
+
+                SimpleRecycleViewAdapter<AttachmentViewModel> adapter = null;
+                if ((requestCode & 0xff00) == 0x0800) {
+                    adapter = (SimpleRecycleViewAdapter<AttachmentViewModel>) binding.recyclerView.getAdapter();
+                }
+
+                if (adapter != null) {
+                    List<AttachmentViewModel> datas = adapter.getData();
 
                     AttachmentViewModel flivm = new AttachmentViewModel(this);
+
                     if (FileKit.isBitmap(filename) || FileKit.isVideo(filename)) {
                         flivm.imageUrl.set(filename);
                     } else {
                         flivm.imageRes.set(FileKit.getFileIcon(filename));
                     }
+
                     flivm.localFile.set(file);
                     flivm.type.set(AttachmentViewModel.TYPE_ITEM);
                     flivm.showDelete.set(true);
-                    datas.add(flivm);
-
-                    adapter.notifyDataSetChanged();
-                }
-            }else if(requestCode== AttachmentViewModel.REQUEST_PICK || requestCode == AttachmentViewModel.REQUEST_OPEN_FILE) {
-                Uri uri = data.getData();
-                File file = FileKit.getFile(this, uri);
-                if (file != null) {
-                    String filename = file.getAbsolutePath();
-
-                    AttachmentViewModel flivm = new AttachmentViewModel(this);
-                    if (FileKit.isBitmap(filename) || FileKit.isVideo(filename)) {
-                        flivm.imageUrl.set(file.getAbsolutePath());
-                    }else{
-                        flivm.imageRes.set(FileKit.getFileIcon(filename));
-                    }
-                    flivm.localFile.set(file);
-                    flivm.type.set(AttachmentViewModel.TYPE_ITEM);
-                    flivm.showDelete.set(true);
-                    datas.add(flivm);
+                    datas.add(datas.size()-1, flivm);
 
                     adapter.notifyDataSetChanged();
                 }

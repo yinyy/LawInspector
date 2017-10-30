@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
     <data>
+        <import type="android.view.View"/>
         <variable
             name="viewModel"
             type="kl.law.inspector.vm.LegalCaseViewModel.FileViewModel"/>
@@ -104,13 +105,27 @@
                 android:layout_marginTop="12dp"
                 android:orientation="vertical">
                 <Button
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_button_normal"
-                android:text="保存"
-                android:onClick="@{viewModel.onSubmitClicked}"
-                android:textColor="@color/colorNormalButtonText"/>
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_button_normal"
+                    android:text="更新数据"
+                    android:onClick="@{viewModel.onSubmitClicked}"
+                    android:textColor="@color/colorNormalButtonText"/>
             </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical"
+                android:visibility="@{viewModel.showFinishedButton?View.VISIBLE:View.GONE}">
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_button_attachment"
+                    android:text="确定，调查完成"
+                    android:onClick="@{viewModel.onFinishedClicked}"
+                    android:textColor="@color/colorNormalButtonText"/>
+            </LinearLayout>
+
         </LinearLayout>
     </ScrollView>
 </layout>

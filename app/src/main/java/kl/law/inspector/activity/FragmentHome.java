@@ -18,6 +18,7 @@ import kl.law.inspector.vm.HomeViewModel;
 
 public class FragmentHome extends Fragment{
     private FragmentHomeBinding binding;
+    private HomeViewModel viewModel;
 
     public static FragmentHome newInstance(){
         FragmentHome fragmentHome = new FragmentHome();
@@ -31,10 +32,17 @@ public class FragmentHome extends Fragment{
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_home, container, false);
-        HomeViewModel viewModel = new HomeViewModel(getContext(), binding);
+        viewModel = new HomeViewModel(getContext(), binding);
         viewModel.init();
         binding.setViewModel(viewModel);
 
         return binding.getRoot();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        viewModel.onResume();
     }
 }

@@ -78,7 +78,7 @@
                     android:hint="审批人意见填写在这里"
                     android:inputType="textMultiLine"
                     android:lines="3"
-                    android:text="@={viewModel.approverOpinion}"
+                    android:text="@={viewModel.opinion}"
                     android:layout_marginTop="8dp"/>
             </LinearLayout>
 
@@ -92,7 +92,7 @@
                     android:text="审批人意见：" />
 
                 <TextView style="@style/MyApp.Content"
-                    android:text="@{viewModel.approverOpinion}"/>
+                    android:text="@{viewModel.opinion}"/>
             </LinearLayout>
 
             <LinearLayout
@@ -122,10 +122,9 @@
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_button_normal"
                     android:text="发送"
-                    android:onClick="@{viewModel.onSendClicked}"
+                    android:onClick="@{viewModel.onSubmitClicked}"
                     android:textColor="@color/colorNormalButtonText" />
             </LinearLayout>
-
             <LinearLayout
                 style="@style/MyApp.ContentLine"
                 android:layout_marginTop="12dp"
@@ -135,10 +134,9 @@
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_button_normal"
                     android:text="完成"
-                    android:onClick="@{viewModel.onFinishClicked}"
+                    android:onClick="@{viewModel.onSubmitClicked}"
                     android:textColor="@color/colorNormalButtonText" />
             </LinearLayout>
-
             <LinearLayout
                 style="@style/MyApp.ContentLine"
                 android:layout_marginTop="12dp"
@@ -148,7 +146,7 @@
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_button_normal"
                     android:text="已阅读"
-                    android:onClick="@{viewModel.onReadClicked}"
+                    android:onClick="@{viewModel.onSubmitClicked}"
                     android:textColor="@color/colorNormalButtonText" />
             </LinearLayout>
         </LinearLayout>
