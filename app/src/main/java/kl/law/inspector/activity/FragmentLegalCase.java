@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.databinding.DataBindingUtil;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -16,6 +17,9 @@ import kl.law.inspector.databinding.FragmentLegalCaseBinding;
 import kl.law.inspector.vm.LegalCaseViewModel;
 
 public class FragmentLegalCase extends Fragment {
+    public static final int REQUEST_CREATE = 0x01;
+    public static final int REQUEST_STATISTICS = 0x02;
+
     private FragmentLegalCaseBinding binding;
     private LegalCaseViewModel viewModel;
 
@@ -66,14 +70,22 @@ public class FragmentLegalCase extends Fragment {
         switch (item.getItemId()){
             case R.id.menu_item_create:
                 intent = new Intent(getActivity(), LegalCaseCreateActivity.class);
-                startActivity(intent);
+                startActivityForResult(intent, REQUEST_CREATE);
                 break;
             case R.id.menu_item_statistics:
                 intent = new Intent(getActivity(), LegalCaseStatisticsActivity.class);
-                startActivity(intent);
+                startActivityForResult(intent, REQUEST_STATISTICS);
                 break;
         }
 
         return  true;
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        boolean canceled = data.getBooleanExtra("cancel", true);
+        if(!canceled){
+            Log.d("TEST", "refresh");
+        }
     }
 }

@@ -6,7 +6,7 @@
         <import type="android.view.View"/>
         <variable
             name="viewModel"
-            type="kl.law.inspector.vm.Home2ViewModel.TodoViewModel"/>
+            type="kl.law.inspector.vm.HomeViewModel.TodoViewModel"/>
     </data>
 
     <LinearLayout

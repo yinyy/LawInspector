@@ -39,6 +39,7 @@ import java.util.Map;
 
 import kl.law.inspector.BR;
 import kl.law.inspector.R;
+import kl.law.inspector.activity.FragmentLegalCase;
 import kl.law.inspector.activity.LegalCaseApproveActivity;
 import kl.law.inspector.activity.LegalCaseDetailActivity;
 import kl.law.inspector.activity.LegalCaseFileActivity;
@@ -256,7 +257,7 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
         });
     }
 
-    public static class CreateViewModel extends AbstractViewModel<ActivityLegalCaseCreateBinding>{
+    public static class CreateViewModel extends AbstractActivityViewModel<ActivityLegalCaseCreateBinding>{
         public final ObservableField<String> title = new ObservableField<>();
         public final ObservableField<String> party = new ObservableField<>();
         public final ObservableField<String> address = new ObservableField<>();
@@ -272,8 +273,8 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
 
         public final ObservableField<BaseAdapter> memberAdapter = new ObservableField<>();
 
-        public CreateViewModel(Context context, ActivityLegalCaseCreateBinding binding) {
-            super(context, binding);
+        public CreateViewModel(Activity activity, ActivityLegalCaseCreateBinding binding) {
+            super(activity, binding);
         }
 
         public void init(){
@@ -397,8 +398,12 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
 
                     @Override
                     public void success(JSONObject data) {
-                        Log.d("TEST", "Create Legal Case, ID is " + data.optString("id") + ".");
+                        //Log.d("TEST", "Create Legal Case, ID is " + data.optString("id") + ".");
                         Toast.makeText(context, "案件信息保存成功。", Toast.LENGTH_LONG).show();
+
+                        Intent intent = new Intent();
+                        intent.putExtra("cancel", true);
+                        activity.setResult(FragmentLegalCase.REQUEST_CREATE, intent);
                         ((Activity)context).finish();
                     }
                 });

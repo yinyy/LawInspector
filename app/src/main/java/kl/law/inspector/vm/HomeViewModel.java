@@ -1,17 +1,18 @@
 package kl.law.inspector.vm;
 
+import android.app.Activity;
 import android.content.Context;
 import android.databinding.DataBindingUtil;
 import android.databinding.ObservableField;
 import android.databinding.ObservableInt;
 import android.os.Handler;
 import android.os.Message;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.widget.DividerItemDecoration;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.RecyclerView;
+import android.support.design.widget.TabLayout;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 
@@ -28,10 +29,11 @@ import kl.law.inspector.BR;
 import kl.law.inspector.R;
 import kl.law.inspector.databinding.FragmentHomeBinding;
 import kl.law.inspector.databinding.ItemNotificationBinding;
+import kl.law.inspector.databinding.ItemToDoBinding;
+import kl.law.inspector.databinding.ViewPagerBinding;
 import kl.law.inspector.tools.ApiKit;
 import kl.law.inspector.tools.NetworkAccessKit;
 import kl.law.inspector.tools.RefreshRecyclerViewAdapter;
-import kl.law.inspector.tools.SimpleRecycleViewAdapter;
 import kl.law.inspector.tools.UserData;
 
 /**
@@ -39,34 +41,177 @@ import kl.law.inspector.tools.UserData;
  */
 
 public class HomeViewModel extends AbstractViewModel<FragmentHomeBinding>{
+    private ViewPagerBinding[] viewPagerBindings;
+    private SwipeRefreshLayout.OnRefreshListener[] onRefreshListener;
+    private Handler importanceNotificationHandler;
 
-    public HomeViewModel(Context context, FragmentHomeBinding binding) {
+    public HomeViewModel(Context context, final FragmentHomeBinding binding) {
         super(context, binding);
+
+        importanceNotificationHandler = new Handler(){
+            @Override
+            public void handleMessage(Message msg) {
+                int index = 0;
+                for (index = 0; index < binding.notificationContainer.getChildCount(); index++) {
+                    if (binding.notificationContainer.getChildAt(index).getVisibility() == View.VISIBLE) {
+                        break;
+                    }
+                }
+
+                final int nextIndex = (index + 1) % binding.notificationContainer.getChildCount();
+
+                Animation animation1 = new AlphaAnimation(1.0f, 0.0f);
+                animation1.setDuration(1000);
+                binding.notificationContainer.getChildAt(index).startAnimation(animation1);
+
+                final int finalIndex = index;
+                animation1.setAnimationListener(new Animation.AnimationListener() {
+                    @Override
+                    public void onAnimationStart(Animation animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animation animation) {
+                        binding.notificationContainer.getChildAt(finalIndex).setVisibility(View.GONE);
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animation animation) {
+
+                    }
+                });
+
+                Animation animation2 = new AlphaAnimation(0.0f, 1.0f);
+                animation2.setDuration(1000);
+                binding.notificationContainer.getChildAt(nextIndex).startAnimation(animation2);
+                animation2.setAnimationListener(new Animation.AnimationListener() {
+                    @Override
+                    public void onAnimationStart(Animation animation) {
+                        binding.notificationContainer.getChildAt(nextIndex).setVisibility(View.VISIBLE);
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animation animation) {
+                        //relativeLayout.getChildAt(nextIndex).setVisibility(View.VISIBLE);
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animation animation) {
+
+                    }
+                });
+
+                sendEmptyMessageDelayed(0, 5000);
+            }
+        };
     }
 
     public void init(){
-        DividerItemDecoration decoration = new DividerItemDecoration(context, DividerItemDecoration.VERTICAL);
-        decoration.setDrawable(ContextCompat.getDrawable(context, R.drawable.ic_recycle_view_default_decoration));
-        binding.legalCaseTodoListRecyclerView.addItemDecoration(decoration);
-        binding.documentTodoListRecyclerView.addItemDecoration(decoration);
-        binding.reminderTodoListRecyclerView.addItemDecoration(decoration);
+        LayoutInflater inflater = ((Activity)context).getLayoutInflater();
+        viewPagerBindings = new ViewPagerBinding[] {
+                DataBindingUtil.inflate(inflater, R.layout.view_pager, null, false),
+                DataBindingUtil.inflate(inflater, R.layout.view_pager, null, false),
+                DataBindingUtil.inflate(inflater, R.layout.view_pager, null, false)
+        };
 
-        fetchNotifications();
-        initTodo();
+        onRefreshListener = new SwipeRefreshLayout.OnRefreshListener[viewPagerBindings.length];
+        for(int index=0;index<viewPagerBindings.length;index++){
+            final int finalIndex = index;
+            onRefreshListener[index] = new SwipeRefreshLayout.OnRefreshListener(){
+                @Override
+                public void onRefresh() {
+                    viewPagerBindings[finalIndex].swipeRefreshLayout.setRefreshing(false);
 
-        initTodoList();
+                    if(finalIndex==0){
+                        loadLegalCase();
+                    }else if(finalIndex==1){
+                        loadDocument();
+                    }else if(finalIndex==2){
+                        loadReminder();
+                    }
+                }
+            };
+        }
 
-        fetchLegalCaseTodoList();
-        fetchDocumentTodoList();
-        fetchReminderTodoList();
+        final View[] views = new View[viewPagerBindings.length];
+        for(int index=0;index<viewPagerBindings.length;index++){
+            views[index] = viewPagerBindings[index].getRoot();
+        }
+
+        binding.viewPager.setAdapter(new PagerAdapter() {
+            @Override
+            public int getCount() {
+                return viewPagerBindings.length;
+            }
+
+            @Override
+            public boolean isViewFromObject(View view, Object object) {
+                return view==object;
+            }
+
+            @Override
+            public void destroyItem(ViewGroup container, int position, Object object) {
+                container.removeView(views[position]);
+            }
+
+            @Override
+            public Object instantiateItem(ViewGroup container, int position) {
+                container.addView(views[position]);
+                return views[position];
+            }
+        });
+        binding.tabLayout.setupWithViewPager(binding.viewPager);
+
+        int[] icons = {R.drawable.ic_legal_case_green, R.drawable.ic_document_blue, R.drawable.ic_remind_yellow};
+        String[] titles = {"行政执法", "公文流转", "待办提醒"};
+        for(int index=0;index<viewPagerBindings.length;index++){
+            ItemToDoBinding todoBinding = DataBindingUtil.inflate(inflater, R.layout.item_to_do, null, false);
+            TodoViewModel todoViewModel = new TodoViewModel();
+            todoViewModel.picture.set(icons[index]);
+            todoViewModel.title.set(titles[index]);
+            todoViewModel.count.set(0);
+            todoBinding.setViewModel(todoViewModel);
+
+            TabLayout.Tab tab = binding.tabLayout.getTabAt(index);
+            tab.setCustomView(todoBinding.getRoot());
+        }
+
+        List<LegalCaseViewModel.ItemViewModel> datasLegalCase = new LinkedList<>();
+        RefreshRecyclerViewAdapter<LegalCaseViewModel.ItemViewModel> adapterLegalCase = new RefreshRecyclerViewAdapter<>(datasLegalCase, R.layout.item_legal_case, R.layout.item_footer_refresh, BR.viewModel, BR.footer);
+        adapterLegalCase.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
+        viewPagerBindings[0].recycleView.setAdapter(adapterLegalCase);
+        viewPagerBindings[0].swipeRefreshLayout.setOnRefreshListener(onRefreshListener[0]);
+
+
+        List<DocumentViewModel.ItemViewModel> datasDocument = new LinkedList<>();
+        RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel> adapterDocument = new RefreshRecyclerViewAdapter<>(datasDocument, R.layout.item_document, R.layout.item_footer_refresh, BR.viewModel, BR.footer);
+        adapterDocument.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
+        viewPagerBindings[1].recycleView.setAdapter(adapterDocument);
+        viewPagerBindings[1].swipeRefreshLayout.setOnRefreshListener(onRefreshListener[1]);
+
+        List<DocumentViewModel.ItemViewModel> datasReminder = new LinkedList<>();
+        RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel> adapterReminder = new RefreshRecyclerViewAdapter<>(datasReminder, R.layout.item_document, R.layout.item_footer_refresh, BR.viewModel, BR.footer);
+        adapterReminder.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
+        viewPagerBindings[2].recycleView.setAdapter(adapterReminder);
+        viewPagerBindings[2].swipeRefreshLayout.setOnRefreshListener(onRefreshListener[2]);
+
+        loadNotifications();
+        loadLegalCase();
+        loadDocument();
+        loadReminder();
     }
 
-    public void onResume(){
-        fetchLegalCaseTodoList();
-        fetchDocumentTodoList();
-        fetchReminderTodoList();
+    public void onResume() {
+//        loadLegalCase();
+//        loadDocument();
+//        loadReminder();
     }
-    private void fetchNotifications() {
+
+    private void loadNotifications() {
+        binding.notificationContainer.removeAllViews();
+        importanceNotificationHandler.removeMessages(0);
+
         NetworkAccessKit.getData(context, ApiKit.URL_ARTICLE(ApiKit.ArticleCategory.NOTIFICATION), new NetworkAccessKit.DefaultCallback<JSONArray>() {
             @Override
             public void success(JSONArray array) {
@@ -97,129 +242,27 @@ public class HomeViewModel extends AbstractViewModel<FragmentHomeBinding>{
                 }
 
                 if (binding.notificationContainer.getChildCount() >= 2) {
-                    final Handler handler = new Handler() {
-                        @Override
-                        public void handleMessage(Message msg) {
-                            int index = 0;
-                            for (index = 0; index < binding.notificationContainer.getChildCount(); index++) {
-                                if (binding.notificationContainer.getChildAt(index).getVisibility() == View.VISIBLE) {
-                                    break;
-                                }
-                            }
-
-                            final int nextIndex = (index + 1) % binding.notificationContainer.getChildCount();
-
-                            Animation animation1 = new AlphaAnimation(1.0f, 0.0f);
-                            animation1.setDuration(1000);
-                            binding.notificationContainer.getChildAt(index).startAnimation(animation1);
-
-                            final int finalIndex = index;
-                            animation1.setAnimationListener(new Animation.AnimationListener() {
-                                @Override
-                                public void onAnimationStart(Animation animation) {
-
-                                }
-
-                                @Override
-                                public void onAnimationEnd(Animation animation) {
-                                    binding.notificationContainer.getChildAt(finalIndex).setVisibility(View.GONE);
-                                }
-
-                                @Override
-                                public void onAnimationRepeat(Animation animation) {
-
-                                }
-                            });
-
-                            Animation animation2 = new AlphaAnimation(0.0f, 1.0f);
-                            animation2.setDuration(1000);
-                            binding.notificationContainer.getChildAt(nextIndex).startAnimation(animation2);
-                            animation2.setAnimationListener(new Animation.AnimationListener() {
-                                @Override
-                                public void onAnimationStart(Animation animation) {
-                                    binding.notificationContainer.getChildAt(nextIndex).setVisibility(View.VISIBLE);
-                                }
-
-                                @Override
-                                public void onAnimationEnd(Animation animation) {
-                                    //relativeLayout.getChildAt(nextIndex).setVisibility(View.VISIBLE);
-                                }
-
-                                @Override
-                                public void onAnimationRepeat(Animation animation) {
-
-                                }
-                            });
-
-                            sendEmptyMessageDelayed(0, 5000);
-                        }
-                    };
-
-                    handler.sendEmptyMessageDelayed(0, 5000);
+                    importanceNotificationHandler.sendEmptyMessageDelayed(0, 5000);
                 }
             }
         });
     }
 
-    private void initTodo(){
-        GridLayoutManager layoutManager = new GridLayoutManager(context, 3);
-        binding.todoRecycclerView.setLayoutManager(layoutManager);
-
-        List<TodoViewModel> datas = new LinkedList<>();
-        TodoViewModel data = new TodoViewModel(this);
-        data.picture.set(R.drawable.ic_legal_case_green);
-        data.title.set("行政执法");
-        data.count.set(0);
-        datas.add(data);
-
-        data = new TodoViewModel(this);
-        data.picture.set(R.drawable.ic_document_blue);
-        data.title.set("公文流转");
-        data.count.set(0);
-        datas.add(data);
-
-        data = new TodoViewModel(this);
-        data.picture.set(R.drawable.ic_remind_yellow);
-        data.title.set("待办提醒");
-        data.count.set(0);
-        datas.add(data);
-
-        SimpleRecycleViewAdapter<TodoViewModel> adapter = new SimpleRecycleViewAdapter<>(datas, R.layout.item_to_do, BR.viewModel);
-        binding.todoRecycclerView.setAdapter(adapter);
-    }
-
-    private void initTodoList(){
-        List<LegalCaseViewModel.ItemViewModel> datasLegalCase = new LinkedList<>();
-        RefreshRecyclerViewAdapter<LegalCaseViewModel.ItemViewModel> adapterLegalCase = new RefreshRecyclerViewAdapter<>(datasLegalCase, R.layout.item_legal_case, R.layout.item_footer_refresh, BR.viewModel, BR.footer);
-        adapterLegalCase.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
-        binding.legalCaseTodoListRecyclerView.setAdapter(adapterLegalCase);
-
-        List<DocumentViewModel.ItemViewModel> datasDocument = new LinkedList<>();
-        RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel> adapterDocument = new RefreshRecyclerViewAdapter<>(datasDocument, R.layout.item_document, R.layout.item_footer_refresh, BR.viewModel, BR.footer);
-        adapterDocument.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
-        binding.documentTodoListRecyclerView.setAdapter(adapterDocument);
-
-        List<DocumentViewModel.ItemViewModel> datasReminder = new LinkedList<>();
-        RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel> adapterReminder = new RefreshRecyclerViewAdapter<>(datasReminder, R.layout.item_document, R.layout.item_footer_refresh, BR.viewModel, BR.footer);
-        adapterReminder.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
-        binding.reminderTodoListRecyclerView.setAdapter(adapterReminder);
-    }
-
-    private void fetchLegalCaseTodoList(){
-        final SimpleRecycleViewAdapter<TodoViewModel> todoAdapter = (SimpleRecycleViewAdapter<TodoViewModel>) binding.todoRecycclerView.getAdapter();
-        final List<TodoViewModel> todoDatas = todoAdapter.getData();
-
-        final RefreshRecyclerViewAdapter<LegalCaseViewModel.ItemViewModel> adapter = (RefreshRecyclerViewAdapter<LegalCaseViewModel.ItemViewModel>) binding.legalCaseTodoListRecyclerView.getAdapter();
+    private void loadLegalCase(){
+        final RefreshRecyclerViewAdapter<LegalCaseViewModel.ItemViewModel> adapter = (RefreshRecyclerViewAdapter<LegalCaseViewModel.ItemViewModel>) viewPagerBindings[0].recycleView.getAdapter();
         adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
         final List<LegalCaseViewModel.ItemViewModel> datas = adapter.getData();
         datas.clear();
+        adapter.notifyDataSetChanged();
+
+        final ItemToDoBinding todoBinding = DataBindingUtil.getBinding(binding.tabLayout.getTabAt(0).getCustomView());
+        final TodoViewModel todoViewModel = todoBinding.getViewModel();
 
         NetworkAccessKit.getData(context, ApiKit.URL_LEGAL_CASE_TODO_LIST(UserData.getInstance().getId()), new NetworkAccessKit.DefaultCallback<JSONArray>() {
             @Override
             public void success(JSONArray jsonArray) {
                 if(jsonArray!=null) {
-                    todoDatas.get(0).count.set(jsonArray.length());
-                    todoAdapter.notifyDataSetChanged();
+                    todoViewModel.count.set(jsonArray.length());
 
                     for (int i = 0; i < jsonArray.length(); i++) {
                         JSONObject jsonObject = jsonArray.optJSONObject(i);
@@ -259,82 +302,80 @@ public class HomeViewModel extends AbstractViewModel<FragmentHomeBinding>{
         });
     }
 
-    private void fetchDocumentTodoList(){
-        final SimpleRecycleViewAdapter<TodoViewModel> todoAdapter = (SimpleRecycleViewAdapter<TodoViewModel>) binding.todoRecycclerView.getAdapter();
-        final List<TodoViewModel> todoDatas = todoAdapter.getData();
-
-        final RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel> adapter = (RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel>) binding.documentTodoListRecyclerView.getAdapter();
+    private void loadDocument(){
+        final RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel> adapter = (RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel>) viewPagerBindings[1].recycleView.getAdapter();
         adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
         final List<DocumentViewModel.ItemViewModel> datas = adapter.getData();
         datas.clear();
+        adapter.notifyDataSetChanged();
+
+        final ItemToDoBinding todoBinding = DataBindingUtil.getBinding(binding.tabLayout.getTabAt(1).getCustomView());
+        final TodoViewModel todoViewModel = todoBinding.getViewModel();
 
         NetworkAccessKit.getData(context, ApiKit.URL_DOCUMENT_TODO_LIST(UserData.getInstance().getId()), new NetworkAccessKit.DefaultCallback<JSONArray>() {
             @Override
             public void success(JSONArray jsonArray) {
-                //TODO:后期打开
-//                if(jsonArray!=null) {
-//                    todoDatas.get(1).count.set(jsonArray.length());
-//                    todoAdapter.notifyDataSetChanged();
-//
-//                    for (int i = 0; i < jsonArray.length(); i++) {
-//                        try {
-//                            JSONObject jsonObject = jsonArray.getJSONObject(i);
-//
-//                            DocumentViewModel.ItemViewModel vm = new DocumentViewModel.ItemViewModel();
-//                            vm.setId(i + "");
-//                            vm.title.set("关于某某事情的决定" + i);
-//                            vm.created.set("2017/10/05");
-//                            vm.progressCode.set(i);
-//
-//                            datas.add(vm);
-//                        } catch (Exception e) {
-//                            e.printStackTrace();
-//                        }
-//                    }
-//                }
-//
-//                adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
-//                adapter.notifyDataSetChanged();
+                if(jsonArray!=null) {
+                    todoViewModel.count.set(jsonArray.length());
+
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        try {
+                            JSONObject jsonObject = jsonArray.getJSONObject(i);
+
+                            DocumentViewModel.ItemViewModel vm = new DocumentViewModel.ItemViewModel();
+                            vm.setId(i + "");
+                            vm.title.set("关于某某事情的决定" + i);
+                            vm.created.set("2017/10/05");
+                            vm.progressCode.set(i);
+
+                            datas.add(vm);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+                adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
+                adapter.notifyDataSetChanged();
             }
         });
     }
 
-    private void fetchReminderTodoList(){
-        final SimpleRecycleViewAdapter<TodoViewModel> todoAdapter = (SimpleRecycleViewAdapter<TodoViewModel>) binding.todoRecycclerView.getAdapter();
-        final List<TodoViewModel> todoDatas = todoAdapter.getData();
-
-        final RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel> adapter = (RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel>) binding.reminderTodoListRecyclerView.getAdapter();
+    private void loadReminder(){
+        final RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel> adapter = (RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel>) viewPagerBindings[2].recycleView.getAdapter();
         adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
         final List<DocumentViewModel.ItemViewModel> datas = adapter.getData();
         datas.clear();
+        adapter.notifyDataSetChanged();
 
-        NetworkAccessKit.getData(context, ApiKit.URL_REMINDER_TODO_LIST(UserData.getInstance().getId()), new NetworkAccessKit.DefaultCallback<JSONArray>() {
+        final ItemToDoBinding todoBinding = DataBindingUtil.getBinding(binding.tabLayout.getTabAt(2).getCustomView());
+        final TodoViewModel todoViewModel = todoBinding.getViewModel();
+
+        NetworkAccessKit.getData(context, ApiKit.URL_DOCUMENT_TODO_LIST(UserData.getInstance().getId()), new NetworkAccessKit.DefaultCallback<JSONArray>() {
             @Override
             public void success(JSONArray jsonArray) {
-                //TODO:后期打开
-//                if(jsonArray!=null) {
-//                    todoDatas.get(2).count.set(jsonArray.length());
-//                    todoAdapter.notifyDataSetChanged();
-//
-//                    for (int i = 0; i < jsonArray.length(); i++) {
-//                        try {
-//                            JSONObject jsonObject = jsonArray.getJSONObject(i);
-//
-//                            DocumentViewModel.ItemViewModel vm = new DocumentViewModel.ItemViewModel();
-//                            vm.setId(i + "");
-//                            vm.title.set("关于某某事情的决定" + i);
-//                            vm.created.set("2017/10/05");
-//                            vm.progressCode.set(i);
-//
-//                            datas.add(vm);
-//                        } catch (Exception e) {
-//                            e.printStackTrace();
-//                        }
-//                    }
-//                }
-//
-//                adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
-//                adapter.notifyDataSetChanged();
+                if(jsonArray!=null) {
+                    todoViewModel.count.set(jsonArray.length());
+
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        try {
+                            JSONObject jsonObject = jsonArray.getJSONObject(i);
+
+                            DocumentViewModel.ItemViewModel vm = new DocumentViewModel.ItemViewModel();
+                            vm.setId(i + "");
+                            vm.title.set("关于某某事情的决定" + i);
+                            vm.created.set("2017/10/05");
+                            vm.progressCode.set(i);
+
+                            datas.add(vm);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+                adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
+                adapter.notifyDataSetChanged();
             }
         });
     }
@@ -343,33 +384,5 @@ public class HomeViewModel extends AbstractViewModel<FragmentHomeBinding>{
         public final ObservableInt picture = new ObservableInt();
         public final ObservableField<String> title = new ObservableField<>();
         public final ObservableInt count = new ObservableInt();
-
-        private HomeViewModel parentViewModel;
-
-        public TodoViewModel(HomeViewModel parentViewModel){
-            this.parentViewModel = parentViewModel;
-        }
-
-        public void onItemClicked(View view){
-            RecyclerView recyclerView = (RecyclerView) view.getParent().getParent();
-            int index = recyclerView.indexOfChild((View) view.getParent());
-            switch (index){
-                case 0:
-                    parentViewModel.binding.legalCaseTodoListRecyclerView.setVisibility(View.VISIBLE);
-                    parentViewModel.binding.documentTodoListRecyclerView.setVisibility(View.GONE);
-                    parentViewModel.binding.reminderTodoListRecyclerView.setVisibility(View.GONE);
-                    break;
-                case 1:
-                    parentViewModel.binding.legalCaseTodoListRecyclerView.setVisibility(View.GONE);
-                    parentViewModel.binding.documentTodoListRecyclerView.setVisibility(View.VISIBLE);
-                    parentViewModel.binding.reminderTodoListRecyclerView.setVisibility(View.GONE);
-                    break;
-                case 2:
-                    parentViewModel.binding.legalCaseTodoListRecyclerView.setVisibility(View.GONE);
-                    parentViewModel.binding.documentTodoListRecyclerView.setVisibility(View.GONE);
-                    parentViewModel.binding.reminderTodoListRecyclerView.setVisibility(View.VISIBLE);
-                    break;
-            }
-        }
     }
 }
