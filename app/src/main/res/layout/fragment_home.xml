@@ -42,7 +42,7 @@
             android:layout_height="1dp"
             android:layout_marginLeft="@dimen/general_margin"
             android:layout_marginRight="@dimen/general_margin"
-            android:background="@color/colorIistItemSeperator" />
+            android:background="@color/colorListItemSeperator" />
 
         <android.support.v7.widget.RecyclerView
             android:layout_width="match_parent"
@@ -57,7 +57,7 @@
             android:layout_height="1dp"
             android:layout_marginLeft="@dimen/general_margin"
             android:layout_marginRight="@dimen/general_margin"
-            android:background="@color/colorIistItemSeperator" />
+            android:background="@color/colorListItemSeperator" />
 
         <RelativeLayout
             android:layout_width="match_parent"

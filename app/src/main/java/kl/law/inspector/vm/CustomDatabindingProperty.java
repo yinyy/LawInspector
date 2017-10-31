@@ -10,11 +10,7 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.widget.RecyclerView;
 import android.widget.ImageView;
 
-import com.ashokvarma.bottomnavigation.BottomNavigationBar;
-import com.ashokvarma.bottomnavigation.BottomNavigationItem;
 import com.squareup.picasso.Picasso;
-
-import java.util.List;
 
 import kl.law.inspector.R;
 
@@ -23,52 +19,6 @@ import kl.law.inspector.R;
  */
 
 public class CustomDatabindingProperty {
-//    @BindingAdapter({"items"})
-//    public static void bindRecycleView(RecyclerView recyclerView, ObservableArrayList items){
-//        UniversallyRecycleViewBindingAdapter adapter = new UniversallyRecycleViewBindingAdapter(items, R.layout.item_function_list, BR.item);
-//        recyclerView.addItemDecoration(new RecyclerView.ItemDecoration() {
-//            private Paint paint;
-//
-//            @Override
-//            public void onDraw(Canvas c, RecyclerView parent, RecyclerView.State state) {
-//                Paint paint = new Paint();
-//                paint.setARGB(100, 0xbb, 0xbb, 0xbb);
-//
-//                int childCount = parent.getChildCount();
-//                int left = parent.getPaddingLeft();
-//                int right = parent.getWidth() - parent.getPaddingRight();
-//
-//                for(int i=0;i<childCount;i++){
-//                    View view = parent.getChildAt(i);
-//                    float top = view.getBottom();
-//                    float bottom = view.getBottom()+1;
-//                    c.drawRect(left, top, right, bottom, paint);
-//                }
-//            }
-//
-//            @Override
-//            public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
-//                super.getItemOffsets(outRect, view, parent, state);
-//                outRect.bottom = 1;
-//            }
-//        });
-//        recyclerView.setAdapter(adapter);
-//    }
-
-    //初始化BottomNavigationBar
-    @BindingAdapter("items")
-    public static void setMainActivityBottomNavigationItems(BottomNavigationBar bottomNavigationBar, List<BottomNavigationItem> navigationItems) {
-        for(BottomNavigationItem item : navigationItems){
-            bottomNavigationBar.addItem(item);
-        }
-
-        bottomNavigationBar.setFirstSelectedPosition(0)
-                .setMode(BottomNavigationBar.MODE_FIXED)
-                .setBackgroundStyle(BottomNavigationBar.BACKGROUND_STYLE_STATIC)
-                .setActiveColor("#ee1619")
-                .initialise();
-    }
-
     //初始化ViewPager
     @BindingAdapter("kindAdapter")
     public static void setPagerAdapter(ViewPager viewPager, PagerAdapter adapter){

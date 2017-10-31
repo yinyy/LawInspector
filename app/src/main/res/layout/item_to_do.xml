@@ -6,7 +6,7 @@
         <import type="android.view.View"/>
         <variable
             name="viewModel"
-            type="kl.law.inspector.vm.HomeViewModel.TodoViewModel"/>
+            type="kl.law.inspector.vm.Home2ViewModel.TodoViewModel"/>
     </data>
 
     <LinearLayout
@@ -15,8 +15,7 @@
         android:gravity="center">
         <android.support.constraint.ConstraintLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:onClick="@{viewModel.onItemClicked}">
+            android:layout_height="wrap_content">
 
             <ImageView
                 android:id="@+id/imageView"

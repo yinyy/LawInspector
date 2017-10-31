@@ -17,7 +17,6 @@ import kl.law.inspector.vm.MainActivityViewModel;
 
 public class MainActivity extends AppCompatActivity{
 
-    private ActivityMainBinding binding;
     private boolean isQuit=false;
     private Handler handler = new Handler();
 
@@ -27,8 +26,10 @@ public class MainActivity extends AppCompatActivity{
 
         PushManager.startWork(getApplicationContext(), PushConstants.LOGIN_TYPE_API_KEY, PushKit.getMetaValue(this, "api_key"));
 
-        binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
+        ActivityMainBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
         MainActivityViewModel viewModel = new MainActivityViewModel(this, binding);
+        viewModel.init();
+
         binding.setViewModel(viewModel);
     }
 

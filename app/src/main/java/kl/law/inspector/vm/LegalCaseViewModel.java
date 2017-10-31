@@ -16,8 +16,6 @@ import android.support.v4.view.PagerAdapter;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -54,6 +52,7 @@ import kl.law.inspector.databinding.FragmentLegalCaseBinding;
 import kl.law.inspector.databinding.ViewPagerBinding;
 import kl.law.inspector.tools.ApiKit;
 import kl.law.inspector.tools.FileKit;
+import kl.law.inspector.tools.MyOnScrollListener;
 import kl.law.inspector.tools.NetworkAccessKit;
 import kl.law.inspector.tools.RefreshRecyclerViewAdapter;
 import kl.law.inspector.tools.SimpleRecycleViewAdapter;
@@ -66,8 +65,8 @@ import kl.law.inspector.tools.UserData;
 
 public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBinding>{
     private ViewPagerBinding[] viewPagerBindings;
-    private MyScrollListener[] scrollListener;
-    private MyRefreshListener[] refreshListeners;
+    private MyOnScrollListener[] scrollListener;
+    private SwipeRefreshLayout.OnRefreshListener[] refreshListeners;
 
     public LegalCaseViewModel(Context context, FragmentLegalCaseBinding binding) {
         super(context, binding);
@@ -80,20 +79,40 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
                 DataBindingUtil.inflate(layoutInflater, R.layout.view_pager, null, false),
                 DataBindingUtil.inflate(layoutInflater, R.layout.view_pager, null, false),
                 DataBindingUtil.inflate(layoutInflater, R.layout.view_pager, null, false)};
-        scrollListener = new MyScrollListener[]{
-                new MyScrollListener(0),
-                new MyScrollListener(1),
-                new MyScrollListener(2),
-                new MyScrollListener(3),
-                new MyScrollListener(4)
-        };
-        refreshListeners = new MyRefreshListener[]{
-                new MyRefreshListener(0),
-                new MyRefreshListener(1),
-                new MyRefreshListener(2),
-                new MyRefreshListener(3),
-                new MyRefreshListener(4)
-        };
+        scrollListener = new MyOnScrollListener[viewPagerBindings.length];
+        for(int index=0;index<viewPagerBindings.length;index++) {
+            final int finalIndex = index;
+            scrollListener[index] = new MyOnScrollListener() {
+
+                @Override
+                public void loadOnScroll() {
+                    loadLegalCase(finalIndex);
+                }
+            };
+        }
+
+        refreshListeners = new SwipeRefreshLayout.OnRefreshListener[viewPagerBindings.length];
+        for(int index = 0; index<viewPagerBindings.length;index++){
+            final int finalIndex = index;
+            refreshListeners[finalIndex] = new SwipeRefreshLayout.OnRefreshListener() {
+                    @Override
+                    public void onRefresh() {
+                        viewPagerBindings[finalIndex].swipeRefreshLayout.setRefreshing(false);
+
+                        scrollListener[finalIndex].currentPage = 0;
+                        scrollListener[finalIndex].hasMoreElemets = true;
+
+                        RefreshRecyclerViewAdapter adapter = (RefreshRecyclerViewAdapter) viewPagerBindings[finalIndex].recycleView.getAdapter();
+                        List<ItemViewModel> datas = adapter.getData();
+                        datas.clear();
+
+                        RefreshRecyclerViewAdapter.FooterViewModel footer = adapter.getFooterViewModel();
+                        footer.status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
+
+                        viewPagerBindings[finalIndex].recycleView.getAdapter().notifyDataSetChanged();
+                    }
+                };
+        }
 
         DividerItemDecoration decoration = new DividerItemDecoration(context, DividerItemDecoration.VERTICAL);
         decoration.setDrawable(ContextCompat.getDrawable(context, R.drawable.ic_recycle_view_default_decoration));
@@ -235,76 +254,6 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
                 Toast.makeText(context, message, Toast.LENGTH_LONG).show();
             }
         });
-    }
-
-    private class MyScrollListener extends RecyclerView.OnScrollListener {
-        private boolean isLoading = false;
-        private int index;
-        private int currentPage;
-        private boolean hasMoreElemets = true;
-
-        public MyScrollListener(int index){
-            this.index = index;
-            this.currentPage = 0;
-        }
-
-        public void clearLoading(){
-            this.isLoading = false;
-        }
-
-        public int getCurrentPage(){
-            return currentPage;
-        }
-
-        public int nextPage(){
-            currentPage++;
-
-            return currentPage;
-        }
-
-        public void setHasMoreElemets(boolean hasMoreElemets){
-            this.hasMoreElemets = hasMoreElemets;
-        }
-
-        @Override
-        public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-            super.onScrolled(recyclerView, dx, dy);
-
-            int visibleCount = recyclerView.getChildCount();
-            int childCount = recyclerView.getAdapter().getItemCount();
-            int firstVisibleIndex = ((LinearLayoutManager)recyclerView.getLayoutManager()).findFirstVisibleItemPosition();
-
-            if(hasMoreElemets && !isLoading && (firstVisibleIndex+visibleCount>=childCount)){
-                isLoading=true;
-
-                loadLegalCase(index);
-            }
-        }
-    }
-
-    private class MyRefreshListener implements SwipeRefreshLayout.OnRefreshListener{
-        private int index;
-
-        public MyRefreshListener(int index) {
-            this.index = index;
-        }
-
-        @Override
-        public void onRefresh() {
-            viewPagerBindings[index].swipeRefreshLayout.setRefreshing(false);
-
-            scrollListener[index].currentPage = 0;
-            scrollListener[index].hasMoreElemets = true;
-
-            RefreshRecyclerViewAdapter adapter=(RefreshRecyclerViewAdapter)viewPagerBindings[index].recycleView.getAdapter();
-            List<ItemViewModel> datas = adapter.getData();
-            datas.clear();
-
-            RefreshRecyclerViewAdapter.FooterViewModel footer = adapter.getFooterViewModel();
-            footer.status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
-
-            viewPagerBindings[index].recycleView.getAdapter().notifyDataSetChanged();
-        }
     }
 
     public static class CreateViewModel extends AbstractViewModel<ActivityLegalCaseCreateBinding>{

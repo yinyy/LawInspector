@@ -7,7 +7,7 @@
     <color name="colorPermissionNotGranted">#e91e63</color>
     <color name="colorPermissionGranted">#7ab900</color>
 
-    <color name="colorIistItemSeperator">#cecece</color>
+    <color name="colorListItemSeperator">#cecece</color>
 
 
 

@@ -4,7 +4,6 @@ import android.content.Context;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentPagerAdapter;
-import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 
 import com.ashokvarma.bottomnavigation.BottomNavigationBar;
@@ -14,47 +13,42 @@ import java.util.LinkedList;
 import java.util.List;
 
 import kl.law.inspector.R;
-import kl.law.inspector.activity.FragmentLegalCase;
 import kl.law.inspector.activity.FragmentDocument;
-import kl.law.inspector.activity.FragmentProfile;
 import kl.law.inspector.activity.FragmentHome;
+import kl.law.inspector.activity.FragmentLegalCase;
+import kl.law.inspector.activity.FragmentProfile;
 import kl.law.inspector.databinding.ActivityMainBinding;
 
 /**
  * Created by yinyy on 2017/8/17.
  */
 
-public class MainActivityViewModel {
-    private Context context;
-    private ActivityMainBinding binding;
-
-    private List<BottomNavigationItem> navigationItems;
-    public List<BottomNavigationItem> getNavigationItems(){
-        return this.navigationItems;
-    }
-
-    private PagerAdapter pagerAdapter;
-    public PagerAdapter getPagerAdapter(){
-        return this.pagerAdapter;
-    }
-
+public class MainActivityViewModel extends AbstractViewModel<ActivityMainBinding>{
     private List<Fragment> fragments = new LinkedList<>();
 
-    public MainActivityViewModel(Context context, final ActivityMainBinding binding) {
-        this.context = context;
-        this.binding = binding;
+    public MainActivityViewModel(Context context, ActivityMainBinding binding) {
+        super(context, binding);
+    }
 
-        this.navigationItems = new LinkedList<>();
-        this.navigationItems.add(new BottomNavigationItem(R.drawable.ic_home, "首页"));
-        this.navigationItems.add(new BottomNavigationItem(R.drawable.ic_legal_case, "行政执法"));
-        this.navigationItems.add(new BottomNavigationItem(R.drawable.ic_document, "公文流转"));
-        this.navigationItems.add(new BottomNavigationItem(R.drawable.ic_mine, "我的"));
+    public void init(){
+        binding.navigation.addItem(new BottomNavigationItem(R.drawable.ic_home, "首页"));
+        binding.navigation.addItem(new BottomNavigationItem(R.drawable.ic_legal_case, "行政执法"));
+        binding.navigation.addItem(new BottomNavigationItem(R.drawable.ic_document, "公文流转"));
+        binding.navigation.addItem(new BottomNavigationItem(R.drawable.ic_mine, "我的"));
+
+        binding.navigation.setFirstSelectedPosition(0)
+                .setMode(BottomNavigationBar.MODE_FIXED)
+                .setBackgroundStyle(BottomNavigationBar.BACKGROUND_STYLE_STATIC)
+                .setActiveColor("#ee1619")
+                .initialise();
 
         fragments.add(FragmentHome.newInstance());
         fragments.add(FragmentLegalCase.newInstance());
         fragments.add(FragmentDocument.newInstance());
         fragments.add(FragmentProfile.newInstance());
-        this.pagerAdapter = new FragmentPagerAdapter(((FragmentActivity)context).getSupportFragmentManager()) {
+
+        binding.viewPager.setOffscreenPageLimit(5);
+        binding.viewPager.setAdapter(new FragmentPagerAdapter(((FragmentActivity)context).getSupportFragmentManager()) {
             @Override
             public Fragment getItem(int position) {
                 return fragments.get(position);
@@ -64,9 +58,9 @@ public class MainActivityViewModel {
             public int getCount() {
                 return fragments.size();
             }
-        };
+        });
 
-        this.binding.navigation.setTabSelectedListener(new BottomNavigationBar.OnTabSelectedListener() {
+        binding.navigation.setTabSelectedListener(new BottomNavigationBar.OnTabSelectedListener() {
             @Override
             public void onTabSelected(int position) {
                 binding.viewPager.setCurrentItem(position);
@@ -82,7 +76,8 @@ public class MainActivityViewModel {
 
             }
         });
-        this.binding.viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+
+        binding.viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
 
