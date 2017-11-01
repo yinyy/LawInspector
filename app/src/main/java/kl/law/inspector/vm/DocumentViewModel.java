@@ -1,11 +1,11 @@
 package kl.law.inspector.vm;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.databinding.DataBindingUtil;
 import android.databinding.ObservableField;
 import android.databinding.ObservableInt;
+import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -49,13 +49,13 @@ import kl.law.inspector.tools.UserData;
  * Created by yinyy on 2017/10/4.
  */
 
-public class DocumentViewModel extends AbstractViewModel<FragmentDocumentBinding> {
+public class DocumentViewModel extends AbstractViewModel<Fragment, FragmentDocumentBinding> {
     private ViewPagerBinding[] viewPagerBindings;
     private MyScrollListener[] scrollListener;
     private MyRefreshListener[] refreshListeners;
 
-    public DocumentViewModel(Context context, FragmentDocumentBinding binding) {
-        super(context, binding);
+    public DocumentViewModel(Fragment owner, FragmentDocumentBinding binding) {
+        super(owner, binding);
     }
 
     public void init() {
@@ -154,7 +154,7 @@ public class DocumentViewModel extends AbstractViewModel<FragmentDocumentBinding
         NetworkAccessKit.getData(context, url, new NetworkAccessKit.DefaultCallback<JSONObject>() {
 
             @Override
-            public void success(JSONObject data) {
+            public void onSuccess(JSONObject data) {
                 scrollListener[index].clearLoading();
 
                 RefreshRecyclerViewAdapter<ItemViewModel> adapter = (RefreshRecyclerViewAdapter<ItemViewModel>) viewPagerBindings[index].recycleView.getAdapter();
@@ -184,15 +184,15 @@ public class DocumentViewModel extends AbstractViewModel<FragmentDocumentBinding
             }
 
             @Override
-            public void failure(int code, String remark) {
-                super.failure(code, remark);
+            public void onFailure(int code, String remark) {
+                super.onFailure(code, remark);
 
                 scrollListener[index].clearLoading();
                 Toast.makeText(context, remark, Toast.LENGTH_LONG).show();
             }
 
             @Override
-            public void error(String message) {
+            public void onError(String message) {
                 scrollListener[index].clearLoading();
                 Toast.makeText(context, message, Toast.LENGTH_LONG).show();
             }
@@ -287,13 +287,13 @@ public class DocumentViewModel extends AbstractViewModel<FragmentDocumentBinding
         }
     }
 
-    public static class CreateViewModel extends AbstractViewModel<ActivityDocumentCreateBinding>{
+    public static class CreateViewModel extends AbstractViewModel<Activity, ActivityDocumentCreateBinding>{
         public final ObservableField<String> title = new ObservableField<>();
 
         public final ObservableField<SimpleRecycleViewAdapter> fileAdapter = new ObservableField<>();
 
-        public CreateViewModel(Context context, ActivityDocumentCreateBinding binding) {
-            super(context, binding);
+        public CreateViewModel(Activity owner, ActivityDocumentCreateBinding binding) {
+            super(owner, binding);
         }
 
         public void init(){
@@ -341,7 +341,7 @@ public class DocumentViewModel extends AbstractViewModel<FragmentDocumentBinding
 
                 NetworkAccessKit.uploadFile(file, new NetworkAccessKit.DefaultCallback<JSONObject>() {
                     @Override
-                    public void success(JSONObject data) {
+                    public void onSuccess(JSONObject data) {
                         String remoteUrl = data.optString("path");
                         Log.d("TEST", remoteUrl);
 
@@ -352,8 +352,8 @@ public class DocumentViewModel extends AbstractViewModel<FragmentDocumentBinding
                     }
 
                     @Override
-                    public void failure(int code, String remark) {
-                        super.failure(code, remark);
+                    public void onFailure(int code, String remark) {
+                        super.onFailure(code, remark);
 
                         if(code==CODE_INVALID_FILE_TYPE) {
                             Toast.makeText(context, "不受支持的文件格式。", Toast.LENGTH_LONG).show();
@@ -402,7 +402,7 @@ public class DocumentViewModel extends AbstractViewModel<FragmentDocumentBinding
 
                 NetworkAccessKit.postData(context, ApiKit.URL_DOCUMENT_CREATE, jsonData, new NetworkAccessKit.DefaultCallback() {
                     @Override
-                    public void success(Object data) {
+                    public void onSuccess(Object data) {
                         Toast.makeText(context, "公文创建成功。", Toast.LENGTH_LONG).show();
                         ((Activity) context).finish();
                     }
@@ -413,7 +413,7 @@ public class DocumentViewModel extends AbstractViewModel<FragmentDocumentBinding
         }
     }
 
-    public static class DetailViewModel extends AbstractViewModel<ActivityDocumentDetailBinding> {
+    public static class DetailViewModel extends AbstractViewModel<Activity, ActivityDocumentDetailBinding> {
         public final ObservableField<String> title = new ObservableField<>();
         public final ObservableInt progressCode = new ObservableInt();
         public final ObservableField<String> opinion = new ObservableField<>();
@@ -424,8 +424,8 @@ public class DocumentViewModel extends AbstractViewModel<FragmentDocumentBinding
 
         private String id;
 
-        public DetailViewModel(Context context, ActivityDocumentDetailBinding binding) {
-            super(context, binding);
+        public DetailViewModel(Activity owner, ActivityDocumentDetailBinding binding) {
+            super(owner, binding);
         }
 
         public void init(String id, int progressCode) {
@@ -434,7 +434,7 @@ public class DocumentViewModel extends AbstractViewModel<FragmentDocumentBinding
 
             NetworkAccessKit.getData(context, ApiKit.URL_DOCUMENT_DETAIL(id), new NetworkAccessKit.DefaultCallback<JSONObject>() {
                 @Override
-                public void success(JSONObject data) {
+                public void onSuccess(JSONObject data) {
                     title.set(data.optString("title"));
                     opinion.set(data.optString("opinion"));
 
@@ -544,7 +544,7 @@ public class DocumentViewModel extends AbstractViewModel<FragmentDocumentBinding
 
                 NetworkAccessKit.postData(context, ApiKit.URL_DOCUMENT_APPROVE, jsonData, new NetworkAccessKit.DefaultCallback() {
                     @Override
-                    public void success(Object data) {
+                    public void onSuccess(Object data) {
                         Toast.makeText(context, "公文提交成功。", Toast.LENGTH_LONG).show();
                         ((Activity) context).finish();
                     }

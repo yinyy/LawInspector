@@ -34,9 +34,9 @@ public final class NetworkAccessKit {
         int CODE_INVALID_FILE_TYPE = 40004;
         int CODE_EMPTY_CONTENT = 44004;
 
-        void success(T data);
-        void failure(int code, String remark);
-        void error(String message);
+        void onSuccess(T data);
+        void onFailure(int code, String remark);
+        void onError(String message);
     }
 
     public interface ProgressCallback{
@@ -45,13 +45,21 @@ public final class NetworkAccessKit {
 
     public static abstract class DefaultCallback<T> implements Callback<T>{
         @Override
-        public void failure(int code, String remark) {
+        public void onFailure(int code, String remark) {
             Log.d("TEST", code + ", " + remark);
+
+            handleFailureAndError();
         }
 
         @Override
-        public void error(String message) {
+        public void onError(String message) {
             Log.d("TEST", message);
+
+            handleFailureAndError();
+        }
+
+        public void handleFailureAndError(){
+            //默认什么也不做
         }
     }
 
@@ -74,23 +82,23 @@ public final class NetworkAccessKit {
             public void onResponse(JSONObject response) {
                 int code = response.optInt("code", -1);
                 if (code == -1) {
-                    callback.error("系统繁忙，请稍后重试。");
+                    callback.onError("系统繁忙，请稍后重试。");
                 }else if (code == 0) {
                     String result = response.optString("result", "success");
                     if ("success".equals(result)) {
-                        callback.success(response.opt("data"));
+                        callback.onSuccess(response.opt("data"));
                     } else {
-                        callback.failure(0, response.optString("remark"));
+                        callback.onFailure(0, response.optString("remark"));
                     }
                 } else {
-                    callback.failure(response.optInt("code", -1), response.optString("remark"));
+                    callback.onFailure(response.optInt("code", -1), response.optString("remark"));
                 }
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
                 error.printStackTrace();
-                callback.error("发生严重错误。");
+                callback.onError("发生严重错误。");
             }
         });
         request.setRetryPolicy(new DefaultRetryPolicy(1000*30, 0, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
@@ -106,23 +114,23 @@ public final class NetworkAccessKit {
             public void onResponse(JSONObject response) {
                 int code = response.optInt("code", -1);
                 if (code == -1) {
-                    callback.error("系统繁忙，请稍后重试。");
+                    callback.onError("系统繁忙，请稍后重试。");
                 }else if (code == 0) {
                     String result = response.optString("result", "success");
                     if ("success".equals(result)) {
-                        callback.success(response.opt("data"));
+                        callback.onSuccess(response.opt("data"));
                     } else {
-                        callback.failure(0, response.optString("remark"));
+                        callback.onFailure(0, response.optString("remark"));
                     }
                 } else {
-                    callback.failure(response.optInt("code", -1), response.optString("remark"));
+                    callback.onFailure(response.optInt("code", -1), response.optString("remark"));
                 }
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
                 error.printStackTrace();
-                callback.error("发生严重错误。");
+                callback.onError("发生严重错误。");
             }
         });
         request.setRetryPolicy(new DefaultRetryPolicy(10*1000, 1, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
@@ -164,7 +172,7 @@ public final class NetworkAccessKit {
         }
 
         if(data==null && fileList==null) {
-            callback.success("sended");
+            callback.onSuccess("sended");
             return;
         }
 
@@ -177,25 +185,21 @@ public final class NetworkAccessKit {
 
                     int code = jsonObject.optInt("code");
                     if(code==-1){
-                        callback.error("系统繁忙，请稍后重试。");
+                        callback.onError("系统繁忙，请稍后重试。");
                     }else if(code==0){
-                        String result = "success";
-                        if(jsonObject.has("result")){
-                            result = jsonObject.optString("result");
-                        }
-
+                        String result = jsonObject.optString("result","success");
                         if("success".equals(result)){
-                            callback.success(jsonObject.opt("data"));
+                            callback.onSuccess(jsonObject.opt("data"));
                         }else{
-                            callback.failure(0, jsonObject.optString("remark"));
+                            callback.onFailure(0, jsonObject.optString("remark"));
                         }
                     }else{
-                        callback.failure(jsonObject.optInt("code"),  jsonObject.optString("remark"));
+                        callback.onFailure(jsonObject.optInt("code"),  jsonObject.optString("remark"));
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
 
-                    callback.error(e.getMessage());
+                    callback.onError(e.getMessage());
                 }
             }
 
@@ -217,7 +221,7 @@ public final class NetworkAccessKit {
                     e.printStackTrace();
                 }
 
-                callback.error(error.getMessage());
+                callback.onError(error.getMessage());
             }
         });
     }

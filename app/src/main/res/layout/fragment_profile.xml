@@ -189,13 +189,13 @@
             </LinearLayout>
 
             <LinearLayout style="@style/MyApp.ContentLine"
-                android:layout_marginTop="12dp">
+                android:layout_marginTop="12dp"
+                android:onClick="@{viewModel.onCheckUpdateClicked}">
                 <android.support.constraint.ConstraintLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="#ffffff"
-                    android:padding="16dp"
-                    android:onClick="@{viewModel.onCheckUpdateClicked}">
+                    android:padding="16dp">
 
                     <ImageView
                         android:id="@+id/imageView10"

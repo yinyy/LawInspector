@@ -37,7 +37,7 @@ public class FragmentDocument extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         FragmentDocumentBinding binding = DataBindingUtil.inflate(inflater, R.layout.fragment_document, container, false);
-        viewModel = new DocumentViewModel(getActivity(), binding);
+        viewModel = new DocumentViewModel(this, binding);
         viewModel.init();
 
         return binding.getRoot();

@@ -1,13 +1,13 @@
 package kl.law.inspector.vm;
 
 import android.app.Activity;
-import android.content.Context;
 import android.databinding.DataBindingUtil;
 import android.databinding.ObservableField;
 import android.databinding.ObservableInt;
 import android.os.Handler;
 import android.os.Message;
 import android.support.design.widget.TabLayout;
+import android.support.v4.app.Fragment;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.LayoutInflater;
@@ -33,6 +33,7 @@ import kl.law.inspector.databinding.ItemToDoBinding;
 import kl.law.inspector.databinding.ViewPagerBinding;
 import kl.law.inspector.tools.ApiKit;
 import kl.law.inspector.tools.NetworkAccessKit;
+import kl.law.inspector.tools.RecyclerViewStatus;
 import kl.law.inspector.tools.RefreshRecyclerViewAdapter;
 import kl.law.inspector.tools.UserData;
 
@@ -40,13 +41,14 @@ import kl.law.inspector.tools.UserData;
  * Created by yinyy on 2017/9/7.
  */
 
-public class HomeViewModel extends AbstractViewModel<FragmentHomeBinding>{
+public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBinding>{
     private ViewPagerBinding[] viewPagerBindings;
     private SwipeRefreshLayout.OnRefreshListener[] onRefreshListener;
     private Handler importanceNotificationHandler;
+    private RecyclerViewStatus[] recyclerViewStatuses;
 
-    public HomeViewModel(Context context, final FragmentHomeBinding binding) {
-        super(context, binding);
+    public HomeViewModel(Fragment owner, final FragmentHomeBinding binding) {
+        super(owner, binding);
 
         importanceNotificationHandler = new Handler(){
             @Override
@@ -107,27 +109,28 @@ public class HomeViewModel extends AbstractViewModel<FragmentHomeBinding>{
         };
     }
 
-    public void init(){
-        LayoutInflater inflater = ((Activity)context).getLayoutInflater();
-        viewPagerBindings = new ViewPagerBinding[] {
+    public void init() {
+        LayoutInflater inflater = ((Activity) context).getLayoutInflater();
+        viewPagerBindings = new ViewPagerBinding[]{
                 DataBindingUtil.inflate(inflater, R.layout.view_pager, null, false),
                 DataBindingUtil.inflate(inflater, R.layout.view_pager, null, false),
                 DataBindingUtil.inflate(inflater, R.layout.view_pager, null, false)
         };
 
         onRefreshListener = new SwipeRefreshLayout.OnRefreshListener[viewPagerBindings.length];
-        for(int index=0;index<viewPagerBindings.length;index++){
+        for (int index = 0; index < viewPagerBindings.length; index++) {
             final int finalIndex = index;
-            onRefreshListener[index] = new SwipeRefreshLayout.OnRefreshListener(){
+            onRefreshListener[index] = new SwipeRefreshLayout.OnRefreshListener() {
                 @Override
                 public void onRefresh() {
                     viewPagerBindings[finalIndex].swipeRefreshLayout.setRefreshing(false);
+                    recyclerViewStatuses[finalIndex].setLoaded(false);
 
-                    if(finalIndex==0){
+                    if (finalIndex == 0) {
                         loadLegalCase();
-                    }else if(finalIndex==1){
+                    } else if (finalIndex == 1) {
                         loadDocument();
-                    }else if(finalIndex==2){
+                    } else if (finalIndex == 2) {
                         loadReminder();
                     }
                 }
@@ -135,7 +138,7 @@ public class HomeViewModel extends AbstractViewModel<FragmentHomeBinding>{
         }
 
         final View[] views = new View[viewPagerBindings.length];
-        for(int index=0;index<viewPagerBindings.length;index++){
+        for (int index = 0; index < viewPagerBindings.length; index++) {
             views[index] = viewPagerBindings[index].getRoot();
         }
 
@@ -147,7 +150,7 @@ public class HomeViewModel extends AbstractViewModel<FragmentHomeBinding>{
 
             @Override
             public boolean isViewFromObject(View view, Object object) {
-                return view==object;
+                return view == object;
             }
 
             @Override
@@ -165,7 +168,7 @@ public class HomeViewModel extends AbstractViewModel<FragmentHomeBinding>{
 
         int[] icons = {R.drawable.ic_legal_case_green, R.drawable.ic_document_blue, R.drawable.ic_remind_yellow};
         String[] titles = {"行政执法", "公文流转", "待办提醒"};
-        for(int index=0;index<viewPagerBindings.length;index++){
+        for (int index = 0; index < viewPagerBindings.length; index++) {
             ItemToDoBinding todoBinding = DataBindingUtil.inflate(inflater, R.layout.item_to_do, null, false);
             TodoViewModel todoViewModel = new TodoViewModel();
             todoViewModel.picture.set(icons[index]);
@@ -176,6 +179,29 @@ public class HomeViewModel extends AbstractViewModel<FragmentHomeBinding>{
             TabLayout.Tab tab = binding.tabLayout.getTabAt(index);
             tab.setCustomView(todoBinding.getRoot());
         }
+        binding.tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                int index = binding.tabLayout.getSelectedTabPosition();
+                if (index == 0) {
+                    loadLegalCase();
+                } else if (index == 1) {
+                    loadDocument();
+                } else if (index == 2) {
+                    loadReminder();
+                }
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+
+            }
+        });
 
         List<LegalCaseViewModel.ItemViewModel> datasLegalCase = new LinkedList<>();
         RefreshRecyclerViewAdapter<LegalCaseViewModel.ItemViewModel> adapterLegalCase = new RefreshRecyclerViewAdapter<>(datasLegalCase, R.layout.item_legal_case, R.layout.item_footer_refresh, BR.viewModel, BR.footer);
@@ -196,16 +222,19 @@ public class HomeViewModel extends AbstractViewModel<FragmentHomeBinding>{
         viewPagerBindings[2].recycleView.setAdapter(adapterReminder);
         viewPagerBindings[2].swipeRefreshLayout.setOnRefreshListener(onRefreshListener[2]);
 
+        recyclerViewStatuses = new RecyclerViewStatus[viewPagerBindings.length];
+        for(int index=0;index<recyclerViewStatuses.length;index++){
+            recyclerViewStatuses[index] = new RecyclerViewStatus();
+            recyclerViewStatuses[index].setLoaded(false);
+        }
+
         loadNotifications();
         loadLegalCase();
-        loadDocument();
-        loadReminder();
+//       loadDocument();
+//       loadReminder();
     }
 
     public void onResume() {
-//        loadLegalCase();
-//        loadDocument();
-//        loadReminder();
     }
 
     private void loadNotifications() {
@@ -214,7 +243,7 @@ public class HomeViewModel extends AbstractViewModel<FragmentHomeBinding>{
 
         NetworkAccessKit.getData(context, ApiKit.URL_ARTICLE(ApiKit.ArticleCategory.NOTIFICATION), new NetworkAccessKit.DefaultCallback<JSONArray>() {
             @Override
-            public void success(JSONArray array) {
+            public void onSuccess(JSONArray array) {
                 if (array == null) {
                     return;
                 }
@@ -249,6 +278,12 @@ public class HomeViewModel extends AbstractViewModel<FragmentHomeBinding>{
     }
 
     private void loadLegalCase(){
+        if(recyclerViewStatuses[0].isLoaded()){
+            return ;
+        }
+
+        recyclerViewStatuses[0].setLoaded(true);
+
         final RefreshRecyclerViewAdapter<LegalCaseViewModel.ItemViewModel> adapter = (RefreshRecyclerViewAdapter<LegalCaseViewModel.ItemViewModel>) viewPagerBindings[0].recycleView.getAdapter();
         adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
         final List<LegalCaseViewModel.ItemViewModel> datas = adapter.getData();
@@ -260,9 +295,9 @@ public class HomeViewModel extends AbstractViewModel<FragmentHomeBinding>{
 
         NetworkAccessKit.getData(context, ApiKit.URL_LEGAL_CASE_TODO_LIST(UserData.getInstance().getId()), new NetworkAccessKit.DefaultCallback<JSONArray>() {
             @Override
-            public void success(JSONArray jsonArray) {
+            public void onSuccess(JSONArray jsonArray) {
                 if(jsonArray!=null) {
-                    todoViewModel.count.set(jsonArray.length());
+                    //todoViewModel.count.set(jsonArray.length());
 
                     for (int i = 0; i < jsonArray.length(); i++) {
                         JSONObject jsonObject = jsonArray.optJSONObject(i);
@@ -299,10 +334,21 @@ public class HomeViewModel extends AbstractViewModel<FragmentHomeBinding>{
                 adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
                 adapter.notifyDataSetChanged();
             }
+
+            @Override
+            public void handleFailureAndError() {
+                adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
+            }
         });
     }
 
     private void loadDocument(){
+        if(recyclerViewStatuses[1].isLoaded()){
+            return ;
+        }
+
+        recyclerViewStatuses[1].setLoaded(true);
+
         final RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel> adapter = (RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel>) viewPagerBindings[1].recycleView.getAdapter();
         adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
         final List<DocumentViewModel.ItemViewModel> datas = adapter.getData();
@@ -314,9 +360,9 @@ public class HomeViewModel extends AbstractViewModel<FragmentHomeBinding>{
 
         NetworkAccessKit.getData(context, ApiKit.URL_DOCUMENT_TODO_LIST(UserData.getInstance().getId()), new NetworkAccessKit.DefaultCallback<JSONArray>() {
             @Override
-            public void success(JSONArray jsonArray) {
+            public void onSuccess(JSONArray jsonArray) {
                 if(jsonArray!=null) {
-                    todoViewModel.count.set(jsonArray.length());
+                    //todoViewModel.count.set(jsonArray.length());
 
                     for (int i = 0; i < jsonArray.length(); i++) {
                         try {
@@ -338,10 +384,21 @@ public class HomeViewModel extends AbstractViewModel<FragmentHomeBinding>{
                 adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
                 adapter.notifyDataSetChanged();
             }
+
+            @Override
+            public void handleFailureAndError() {
+                adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
+            }
         });
     }
 
     private void loadReminder(){
+        if(recyclerViewStatuses[2].isLoaded()){
+            return;
+        }
+
+        recyclerViewStatuses[2].setLoaded(true);
+
         final RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel> adapter = (RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel>) viewPagerBindings[2].recycleView.getAdapter();
         adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
         final List<DocumentViewModel.ItemViewModel> datas = adapter.getData();
@@ -353,9 +410,9 @@ public class HomeViewModel extends AbstractViewModel<FragmentHomeBinding>{
 
         NetworkAccessKit.getData(context, ApiKit.URL_DOCUMENT_TODO_LIST(UserData.getInstance().getId()), new NetworkAccessKit.DefaultCallback<JSONArray>() {
             @Override
-            public void success(JSONArray jsonArray) {
+            public void onSuccess(JSONArray jsonArray) {
                 if(jsonArray!=null) {
-                    todoViewModel.count.set(jsonArray.length());
+                    //todoViewModel.count.set(jsonArray.length());
 
                     for (int i = 0; i < jsonArray.length(); i++) {
                         try {
@@ -376,6 +433,11 @@ public class HomeViewModel extends AbstractViewModel<FragmentHomeBinding>{
 
                 adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
                 adapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void handleFailureAndError() {
+                adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
             }
         });
     }

@@ -1,6 +1,6 @@
 package kl.law.inspector.vm;
 
-import android.content.Context;
+import android.app.Activity;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentPagerAdapter;
@@ -23,11 +23,11 @@ import kl.law.inspector.databinding.ActivityMainBinding;
  * Created by yinyy on 2017/8/17.
  */
 
-public class MainActivityViewModel extends AbstractViewModel<ActivityMainBinding>{
+public class MainActivityViewModel extends AbstractViewModel<Activity, ActivityMainBinding>{
     private List<Fragment> fragments = new LinkedList<>();
 
-    public MainActivityViewModel(Context context, ActivityMainBinding binding) {
-        super(context, binding);
+    public MainActivityViewModel(Activity owner, ActivityMainBinding binding) {
+        super(owner, binding);
     }
 
     public void init(){

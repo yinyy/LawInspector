@@ -100,4 +100,13 @@ public class ApiKit {
     public static String URL_DOCUMENT_DETAIL(String documentId){
         return MessageFormat.format("{0}/apiv1/oa/document/get?id={1}", API_URL_PREFIX, documentId);
     }
+
+
+
+
+
+    //检查软件更新
+    public static String URL_CHECK_UPDATE(int versionCode){
+        return MessageFormat.format("{0}/apiv1/app/check/update?versionCode={1}", API_URL_PREFIX, versionCode);
+    }
 }

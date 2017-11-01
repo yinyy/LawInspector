@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.databinding.ObservableField;
-import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -23,14 +22,14 @@ import kl.law.inspector.tools.UserData;
  * Created by yinyy on 2017/8/17.
  */
 
-public class LoginViewModel extends AbstractViewModel<ActivityLoginBinding> {
+public class LoginViewModel extends AbstractViewModel<Activity, ActivityLoginBinding> {
     public final ObservableField<String> username = new ObservableField<>();
     public final ObservableField<String> password = new ObservableField<>();
     public final ObservableField<Boolean> isRememberPassword = new ObservableField<>();
     public final ObservableField<Boolean> isAutoLogin = new ObservableField<>();
 
-    public LoginViewModel(Context context, ActivityLoginBinding binding) {
-        super(context, binding);
+    public LoginViewModel(Activity owner, ActivityLoginBinding binding) {
+        super(owner, binding);
     }
 
     public void tryAutoLogin() {
@@ -43,7 +42,7 @@ public class LoginViewModel extends AbstractViewModel<ActivityLoginBinding> {
 
             this.isAutoLogin.set(pref.getBoolean("isAutoLogin", false));
             if (isAutoLogin.get()) {
-                login(context, username.get(), password.get(), true, true);
+                login(username.get(), password.get(), true, true);
             }
         }
     }
@@ -65,7 +64,7 @@ public class LoginViewModel extends AbstractViewModel<ActivityLoginBinding> {
         boolean isRemember = binding.rememberCheckbox.isChecked();
         boolean isAutoLogin = binding.autoCheckbox.isChecked();
 
-        login(view.getContext(), username, password, isRemember, isAutoLogin);
+        login(username, password, isRemember, isAutoLogin);
     }
 
     public void onReset(View view) {
@@ -85,12 +84,12 @@ public class LoginViewModel extends AbstractViewModel<ActivityLoginBinding> {
         }
     }
 
-    private void login(final Context context, final String username, final String password, final boolean isRemember, final boolean isAutoLogin) {
+    private void login(final String username, final String password, final boolean isRemember, final boolean isAutoLogin) {
         DialogKit.showLoadingDialog(context);
 
         NetworkAccessKit.getData(context, ApiKit.URL_LOGIN(username, password), new NetworkAccessKit.DefaultCallback<JSONObject>() {
             @Override
-            public void success(JSONObject userData) {
+            public void onSuccess(JSONObject userData) {
                 DialogKit.hideLoadingDialog();
 
                 SharedPreferences pref = context.getSharedPreferences("profile.data", Context.MODE_PRIVATE);
@@ -121,21 +120,9 @@ public class LoginViewModel extends AbstractViewModel<ActivityLoginBinding> {
             }
 
             @Override
-            public void failure(int code, String remark) {
-                super.failure(code, remark);
-
+            public void handleFailureAndError() {
                 DialogKit.hideLoadingDialog();
-
-                Log.d("TEST", remark);
-                Toast.makeText(context, "发生异常：" + remark, Toast.LENGTH_LONG).show();
-            }
-
-            @Override
-            public void error(String message) {
-                DialogKit.hideLoadingDialog();
-
-                Log.d("TEST", "发生错误：" + message);
-                Toast.makeText(context,"发生错误：" + message, Toast.LENGTH_LONG).show();
+                Toast.makeText(context, "登录时发生错误，请稍后重试。", Toast.LENGTH_LONG).show();
             }
         });
     }

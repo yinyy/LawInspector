@@ -45,7 +45,7 @@ public class FragmentLegalCase extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_legal_case, container, false);
-        viewModel = new LegalCaseViewModel(getActivity(), binding);
+        viewModel = new LegalCaseViewModel(this, binding);
         viewModel.init();
 
         return binding.getRoot();

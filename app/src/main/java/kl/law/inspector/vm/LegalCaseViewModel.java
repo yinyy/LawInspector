@@ -3,7 +3,6 @@ package kl.law.inspector.vm;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.databinding.DataBindingUtil;
@@ -11,11 +10,14 @@ import android.databinding.ObservableBoolean;
 import android.databinding.ObservableField;
 import android.databinding.ObservableInt;
 import android.provider.MediaStore;
+import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -53,8 +55,8 @@ import kl.law.inspector.databinding.FragmentLegalCaseBinding;
 import kl.law.inspector.databinding.ViewPagerBinding;
 import kl.law.inspector.tools.ApiKit;
 import kl.law.inspector.tools.FileKit;
-import kl.law.inspector.tools.MyOnScrollListener;
 import kl.law.inspector.tools.NetworkAccessKit;
+import kl.law.inspector.tools.RecyclerViewStatus;
 import kl.law.inspector.tools.RefreshRecyclerViewAdapter;
 import kl.law.inspector.tools.SimpleRecycleViewAdapter;
 import kl.law.inspector.tools.UserData;
@@ -64,13 +66,12 @@ import kl.law.inspector.tools.UserData;
  * http://www.jianshu.com/p/3bf125b4917d
  */
 
-public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBinding>{
+public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLegalCaseBinding>{
     private ViewPagerBinding[] viewPagerBindings;
-    private MyOnScrollListener[] scrollListener;
-    private SwipeRefreshLayout.OnRefreshListener[] refreshListeners;
+    private RecyclerViewStatus[] recyclerViewStatuses;
 
-    public LegalCaseViewModel(Context context, FragmentLegalCaseBinding binding) {
-        super(context, binding);
+    public LegalCaseViewModel(Fragment owner, FragmentLegalCaseBinding binding) {
+        super(owner, binding);
     }
 
     public void init() {
@@ -80,39 +81,10 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
                 DataBindingUtil.inflate(layoutInflater, R.layout.view_pager, null, false),
                 DataBindingUtil.inflate(layoutInflater, R.layout.view_pager, null, false),
                 DataBindingUtil.inflate(layoutInflater, R.layout.view_pager, null, false)};
-        scrollListener = new MyOnScrollListener[viewPagerBindings.length];
-        for(int index=0;index<viewPagerBindings.length;index++) {
-            final int finalIndex = index;
-            scrollListener[index] = new MyOnScrollListener() {
 
-                @Override
-                public void loadOnScroll() {
-                    loadLegalCase(finalIndex);
-                }
-            };
-        }
-
-        refreshListeners = new SwipeRefreshLayout.OnRefreshListener[viewPagerBindings.length];
-        for(int index = 0; index<viewPagerBindings.length;index++){
-            final int finalIndex = index;
-            refreshListeners[finalIndex] = new SwipeRefreshLayout.OnRefreshListener() {
-                    @Override
-                    public void onRefresh() {
-                        viewPagerBindings[finalIndex].swipeRefreshLayout.setRefreshing(false);
-
-                        scrollListener[finalIndex].currentPage = 0;
-                        scrollListener[finalIndex].hasMoreElemets = true;
-
-                        RefreshRecyclerViewAdapter adapter = (RefreshRecyclerViewAdapter) viewPagerBindings[finalIndex].recycleView.getAdapter();
-                        List<ItemViewModel> datas = adapter.getData();
-                        datas.clear();
-
-                        RefreshRecyclerViewAdapter.FooterViewModel footer = adapter.getFooterViewModel();
-                        footer.status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
-
-                        viewPagerBindings[finalIndex].recycleView.getAdapter().notifyDataSetChanged();
-                    }
-                };
+        recyclerViewStatuses = new RecyclerViewStatus[viewPagerBindings.length];
+        for (int index = 0; index < recyclerViewStatuses.length; index++) {
+            recyclerViewStatuses[index] = new RecyclerViewStatus();
         }
 
         DividerItemDecoration decoration = new DividerItemDecoration(context, DividerItemDecoration.VERTICAL);
@@ -164,55 +136,76 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
         });
         binding.tabLayout.setupWithViewPager(binding.viewPager);
 
-        for(int index=0;index<views.length;index++){
+        for (int index = 0; index < views.length; index++) {
             List<LegalCaseViewModel.ItemViewModel> datas = new ArrayList<>();
-
             RefreshRecyclerViewAdapter<ItemViewModel> adapter = new RefreshRecyclerViewAdapter<>(datas, R.layout.item_legal_case, R.layout.item_footer_refresh, BR.viewModel, BR.footer);
             viewPagerBindings[index].recycleView.setAdapter(adapter);
-            //viewPagerBindings[index].recycleView.addOnScrollListener(scrollListener[index]);
-            viewPagerBindings[index].swipeRefreshLayout.setOnRefreshListener(refreshListeners[index]);
-            //loadLegalCase(index);
+
+            final int finalIndex = index;
+            viewPagerBindings[index].swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+                @Override
+                public void onRefresh() {
+                    viewPagerBindings[finalIndex].swipeRefreshLayout.setRefreshing(false);
+
+                    recyclerViewStatuses[finalIndex].setPage(0);
+                    recyclerViewStatuses[finalIndex].setHasMoreElements(true);
+
+                    RefreshRecyclerViewAdapter adapter = (RefreshRecyclerViewAdapter) viewPagerBindings[finalIndex].recycleView.getAdapter();
+                    List<ItemViewModel> datas = adapter.getData();
+
+                    if(datas.size()==0) {
+                        loadLegalCase(finalIndex);
+                    }
+
+                    datas.clear();
+                    adapter.notifyDataSetChanged();
+
+                    RefreshRecyclerViewAdapter.FooterViewModel footer = adapter.getFooterViewModel();
+                    footer.status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
+                }
+            });
+            viewPagerBindings[index].recycleView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+                @Override
+                public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                    super.onScrolled(recyclerView, dx, dy);
+
+                    int visibleCount = recyclerView.getChildCount();
+                    int childCount = recyclerView.getAdapter().getItemCount();
+                    int firstVisibleIndex = ((LinearLayoutManager) recyclerView.getLayoutManager()).findFirstVisibleItemPosition();
+
+                    if (recyclerViewStatuses[finalIndex].hasMoreElements() && !recyclerViewStatuses[finalIndex].isLoading() && (firstVisibleIndex + visibleCount >= childCount)) {
+                        recyclerViewStatuses[finalIndex].setLoading(true);
+
+                        loadLegalCase(finalIndex);
+                    }
+                }
+            });
         }
+
+        loadLegalCase(0);
     }
 
     public void onResume(){
-        for(int index=0;index<viewPagerBindings.length;index++){
-            viewPagerBindings[index].recycleView.clearOnScrollListeners();
-
-            scrollListener[index].currentPage = 0;
-            scrollListener[index].hasMoreElemets = true;
-
-            RefreshRecyclerViewAdapter adapter=(RefreshRecyclerViewAdapter)viewPagerBindings[index].recycleView.getAdapter();
-            List<ItemViewModel> datas = adapter.getData();
-            datas.clear();
-
-            RefreshRecyclerViewAdapter.FooterViewModel footer = adapter.getFooterViewModel();
-            footer.status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
-
-            viewPagerBindings[index].recycleView.getAdapter().notifyDataSetChanged();
-
-            viewPagerBindings[index].recycleView.addOnScrollListener(scrollListener[index]);
-        }
     }
 
     private void loadLegalCase(final int index) {
-        String url = ApiKit.URL_LEGAL_CASE_LIST(scrollListener[index].nextPage(), index + 1, UserData.getInstance().getId());
+        String url = ApiKit.URL_LEGAL_CASE_LIST(recyclerViewStatuses[index].nextPage(), index + 1, UserData.getInstance().getId());
 
         NetworkAccessKit.getData(context, url, new NetworkAccessKit.DefaultCallback<JSONObject>() {
 
             @Override
-            public void success(JSONObject data) {
-                scrollListener[index].clearLoading();
+            public void onSuccess(JSONObject data) {
+                recyclerViewStatuses[index].setLoading(false);
 
                 RefreshRecyclerViewAdapter<ItemViewModel> adapter = (RefreshRecyclerViewAdapter<ItemViewModel>) viewPagerBindings[index].recycleView.getAdapter();
                 List<ItemViewModel> datas = adapter.getData();
 
                 int pagecount = data.optInt("pagecount", 0);
-                if (pagecount > scrollListener[index].getCurrentPage()) {
+                if (pagecount > recyclerViewStatuses[index].getPage()) {
                     adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
                 } else {
                     adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
-                    scrollListener[index].setHasMoreElemets(false);
+                    recyclerViewStatuses[index].setHasMoreElements(false);
                 }
 
                 JSONArray jsonArray = data.optJSONArray("data");
@@ -238,26 +231,19 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
                 }
 
                 adapter.notifyDataSetChanged();
-                scrollListener[index].clearLoading();
+                recyclerViewStatuses[index].setLoading(false);
             }
 
             @Override
-            public void failure(int code, String remark) {
-                super.failure(code, remark);
-
-                scrollListener[index].clearLoading();
-                Toast.makeText(context, remark, Toast.LENGTH_LONG).show();
-            }
-
-            @Override
-            public void error(String message) {
-                scrollListener[index].clearLoading();
-                Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+            public void handleFailureAndError() {
+                recyclerViewStatuses[index].setLoading(false);
+                recyclerViewStatuses[index].setHasMoreElements(false);
+                Toast.makeText(context, "加载数据时发生错误，请稍后重试。", Toast.LENGTH_LONG).show();
             }
         });
     }
 
-    public static class CreateViewModel extends AbstractActivityViewModel<ActivityLegalCaseCreateBinding>{
+    public static class CreateViewModel extends AbstractViewModel<Activity, ActivityLegalCaseCreateBinding>{
         public final ObservableField<String> title = new ObservableField<>();
         public final ObservableField<String> party = new ObservableField<>();
         public final ObservableField<String> address = new ObservableField<>();
@@ -273,8 +259,8 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
 
         public final ObservableField<BaseAdapter> memberAdapter = new ObservableField<>();
 
-        public CreateViewModel(Activity activity, ActivityLegalCaseCreateBinding binding) {
-            super(activity, binding);
+        public CreateViewModel(Activity owner, ActivityLegalCaseCreateBinding binding) {
+            super(owner, binding);
         }
 
         public void init(){
@@ -283,7 +269,7 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
             NetworkAccessKit.getData(context, ApiKit.URL_ARTICLE(ApiKit.ArticleCategory.LEGAL_CASE_SOURCE), new NetworkAccessKit.DefaultCallback<JSONArray>(){
 
                 @Override
-                public void success(JSONArray data) {
+                public void onSuccess(JSONArray data) {
                     List<String> items = new LinkedList<String>();
 
                     for (int i = 0; i < data.length(); i++) {
@@ -302,7 +288,7 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
             NetworkAccessKit.getData(context, ApiKit.URL_ARTICLE(ApiKit.ArticleCategory.ILLEGAL_BEHAVIOR), new NetworkAccessKit.DefaultCallback<JSONArray>(){
 
                 @Override
-                public void success(JSONArray data) {
+                public void onSuccess(JSONArray data) {
                     List<String> items = new LinkedList<String>();
 
                     for (int i = 0; i < data.length(); i++) {
@@ -321,7 +307,7 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
             NetworkAccessKit.getData(context, ApiKit.URL_ARTICLE(ApiKit.ArticleCategory.LEGAL_PROVISION), new NetworkAccessKit.DefaultCallback<JSONArray>(){
 
                 @Override
-                public void success(JSONArray data) {
+                public void onSuccess(JSONArray data) {
                     List<String> items = new LinkedList<String>();
 
                     for (int i = 0; i < data.length(); i++) {
@@ -340,7 +326,7 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
             NetworkAccessKit.getData(context, ApiKit.URL_USER(UserData.getInstance().getOfficeId()), new NetworkAccessKit.DefaultCallback<JSONArray>(){
 
                 @Override
-                public void success(JSONArray data) {
+                public void onSuccess(JSONArray data) {
                     List<Map<String, String>> items = new LinkedList<>();
 
                     for (int i = 0; i < data.length(); i++) {
@@ -397,13 +383,13 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
                 NetworkAccessKit.postData(context, ApiKit.URL_LEGAL_CASE_CREATE, jsonData, new NetworkAccessKit.DefaultCallback<JSONObject>() {
 
                     @Override
-                    public void success(JSONObject data) {
+                    public void onSuccess(JSONObject data) {
                         //Log.d("TEST", "Create Legal Case, ID is " + data.optString("id") + ".");
                         Toast.makeText(context, "案件信息保存成功。", Toast.LENGTH_LONG).show();
 
                         Intent intent = new Intent();
                         intent.putExtra("cancel", true);
-                        activity.setResult(FragmentLegalCase.REQUEST_CREATE, intent);
+                        owner.setResult(FragmentLegalCase.REQUEST_CREATE, intent);
                         ((Activity)context).finish();
                     }
                 });
@@ -414,7 +400,7 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
         }
     }
 
-    public static class DetailViewModel extends AbstractViewModel<ActivityLegalCaseDetailBinding>{
+    public static class DetailViewModel extends AbstractViewModel<Activity, ActivityLegalCaseDetailBinding>{
         public final ObservableField<String> title = new ObservableField<>();
         public final ObservableField<String> party = new ObservableField<>();
         public final ObservableField<String> address = new ObservableField<>();
@@ -427,8 +413,8 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
         private String id;
         private int stage;//工作流的大状态
 
-        public DetailViewModel(Context context, ActivityLegalCaseDetailBinding binding) {
-            super(context, binding);
+        public DetailViewModel(Activity owner, ActivityLegalCaseDetailBinding binding) {
+            super(owner, binding);
         }
 
         public void init(String id) {
@@ -436,7 +422,7 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
 
             NetworkAccessKit.getData(context, ApiKit.URL_LEGAL_CASE_DETAIL(id), new NetworkAccessKit.DefaultCallback<JSONObject>() {
                 @Override
-                public void success(JSONObject data) {
+                public void onSuccess(JSONObject data) {
                     title.set(data.optString("title"));
                     party.set(data.optString("caseParties"));
                     address.set(data.optString("address"));
@@ -507,19 +493,19 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
         }
     }
 
-    public static class ProgressViewModel extends AbstractViewModel<ActivityLegalCaseProgressBinding>{
+    public static class ProgressViewModel extends AbstractViewModel<Activity, ActivityLegalCaseProgressBinding>{
 
         public final ObservableField<SimpleRecycleViewAdapter> progressAdapter = new ObservableField<>();
 
-        public ProgressViewModel(Context context, ActivityLegalCaseProgressBinding binding) {
-            super(context, binding);
+        public ProgressViewModel(Activity owner, ActivityLegalCaseProgressBinding binding) {
+            super(owner, binding);
         }
 
         public void init(String id){
             NetworkAccessKit.getData(context, ApiKit.URL_LEGAL_CASE_PROGRESS_LIST(id), new NetworkAccessKit.DefaultCallback<JSONObject>() {
 
                 @Override
-                public void success(JSONObject data) {
+                public void onSuccess(JSONObject data) {
                     List<ItemViewModel> datas = new LinkedList<>();
 
                     JSONArray progresses = data.optJSONArray("data");
@@ -563,7 +549,7 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
         }
     }
 
-    public static class ApproveViewModel extends AbstractViewModel<ActivityLegalCaseApproveBinding>{
+    public static class ApproveViewModel extends AbstractViewModel<Activity, ActivityLegalCaseApproveBinding>{
         public final ObservableField<String> serial = new ObservableField<>();
         public final ObservableField<String> title = new ObservableField<>();
         public final ObservableField<String> party = new ObservableField<>();
@@ -585,8 +571,8 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
 
         private String id;
 
-        public ApproveViewModel(Context context, ActivityLegalCaseApproveBinding binding) {
-            super(context, binding);
+        public ApproveViewModel(Activity owner, ActivityLegalCaseApproveBinding binding) {
+            super(owner, binding);
         }
 
         public void init(String id, int stage, int step) {
@@ -597,7 +583,7 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
                     NetworkAccessKit.getData(context, ApiKit.URL_ARTICLE(ApiKit.ArticleCategory.ILLEGAL_BEHAVIOR), new NetworkAccessKit.DefaultCallback<JSONArray>() {
 
                         @Override
-                        public void success(JSONArray data) {
+                        public void onSuccess(JSONArray data) {
                             List<String> items = new LinkedList<String>();
 
                             for (int i = 0; i < data.length(); i++) {
@@ -617,7 +603,7 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
                 NetworkAccessKit.getData(context, ApiKit.URL_ARTICLE(ApiKit.ArticleCategory.PUNISH), new NetworkAccessKit.DefaultCallback<JSONArray>() {
 
                     @Override
-                    public void success(JSONArray data) {
+                    public void onSuccess(JSONArray data) {
                         List<String> items = new LinkedList<String>();
 
                         for (int i = 0; i < data.length(); i++) {
@@ -636,7 +622,7 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
                 NetworkAccessKit.getData(context, ApiKit.URL_ARTICLE(ApiKit.ArticleCategory.LEGAL_PROVISION), new NetworkAccessKit.DefaultCallback<JSONArray>() {
 
                     @Override
-                    public void success(JSONArray data) {
+                    public void onSuccess(JSONArray data) {
                         List<String> items = new LinkedList<String>();
 
                         for (int i = 0; i < data.length(); i++) {
@@ -655,7 +641,7 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
 
             NetworkAccessKit.getData(context, ApiKit.URL_LEGAL_CASE_DETAIL(id), new NetworkAccessKit.DefaultCallback<JSONObject>() {
                 @Override
-                public void success(JSONObject data) {
+                public void onSuccess(JSONObject data) {
                     title.set(data.optString("title"));
                     party.set(data.optString("caseParties"));
                     address.set(data.optString("address"));
@@ -742,14 +728,14 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
             NetworkAccessKit.postData(context, ApiKit.URL_LEGAL_CASE_APPROVE, jsonObject, new NetworkAccessKit.DefaultCallback<JSONObject>(){
 
                 @Override
-                public void success(JSONObject data) {
+                public void onSuccess(JSONObject data) {
                     Toast.makeText(view.getContext(), "案件审批成功。", Toast.LENGTH_LONG).show();
                     ((Activity) view.getRootView().getContext()).finish();
                 }
 
                 @Override
-                public void failure(int code, String remark) {
-                    super.failure(code, remark);
+                public void onFailure(int code, String remark) {
+                    super.onFailure(code, remark);
 
                     if(code==CODE_SUCCESS){
                         if("this step has approved".equals(remark)){
@@ -761,8 +747,8 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
                 }
 
                 @Override
-                public void error(String message) {
-                    super.error(message);
+                public void onError(String message) {
+                    super.onError(message);
 
                     new AlertDialog.Builder(context).setTitle("提示").setMessage(message).setPositiveButton("确定", null).show();
                 }
@@ -815,14 +801,14 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
             NetworkAccessKit.postData(context, ApiKit.URL_LEGAL_CASE_APPROVE, jsonObject, new NetworkAccessKit.DefaultCallback<JSONObject>(){
 
                 @Override
-                public void success(JSONObject data) {
+                public void onSuccess(JSONObject data) {
                     Toast.makeText(view.getContext(), "案件审批成功。", Toast.LENGTH_LONG).show();
                     ((Activity) view.getRootView().getContext()).finish();
                 }
 
                 @Override
-                public void failure(int code, String remark) {
-                    super.failure(code, remark);
+                public void onFailure(int code, String remark) {
+                    super.onFailure(code, remark);
 
                     if(code==CODE_SUCCESS){
                         if("this step has approved".equals(remark)){
@@ -834,8 +820,8 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
                 }
 
                 @Override
-                public void error(String message) {
-                    super.error(message);
+                public void onError(String message) {
+                    super.onError(message);
 
                     new AlertDialog.Builder(context).setTitle("提示").setMessage(message).setPositiveButton("确定", null).show();
                 }
@@ -843,7 +829,7 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
         }
     }
 
-    public static class FileViewModel extends AbstractViewModel<ActivityLegalCaseFileBinding>{
+    public static class FileViewModel extends AbstractViewModel<Activity, ActivityLegalCaseFileBinding>{
         public final ObservableField<String> party = new ObservableField<>();
         public final ObservableField<String> address = new ObservableField<>();
         public final ObservableField<String> corporation = new ObservableField<>();
@@ -858,8 +844,8 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
 
         private String id;
 
-        public FileViewModel(Context context, ActivityLegalCaseFileBinding binding) {
-            super(context, binding);
+        public FileViewModel(Activity owner, ActivityLegalCaseFileBinding binding) {
+            super(owner, binding);
         }
 
         public void init(String id) {
@@ -890,7 +876,7 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
             NetworkAccessKit.getData(context, ApiKit.URL_LEGAL_CASE_FILE_LIST(id), new NetworkAccessKit.DefaultCallback<JSONObject>() {
 
                 @Override
-                public void success(JSONObject data) {
+                public void onSuccess(JSONObject data) {
                     try{
                         SimpleRecycleViewAdapter<AttachmentViewModel> adapter = documentAdapter.get();
                         List<AttachmentViewModel> datas = adapter.getData();
@@ -1041,7 +1027,7 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
 
                         NetworkAccessKit.postData(context, ApiKit.URL_LEGAL_CASE_APPROVE, jsonData, new NetworkAccessKit.DefaultCallback<JSONObject>() {
                             @Override
-                            public void success(JSONObject data) {
+                            public void onSuccess(JSONObject data) {
                                 Toast.makeText(context, "调查完成，进入下一流程。", Toast.LENGTH_LONG).show();
                                 ((Activity)context).finish();
                             }
@@ -1095,7 +1081,7 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
 
                 NetworkAccessKit.uploadFile(file, new NetworkAccessKit.DefaultCallback<JSONObject>() {
                     @Override
-                    public void success(JSONObject data) {
+                    public void onSuccess(JSONObject data) {
                         String remoteUrl = data.optString("path");
 
                         viewModel.remoteUrl.set(remoteUrl);
@@ -1105,8 +1091,8 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
                     }
 
                     @Override
-                    public void failure(int code, String remark) {
-                        super.failure(code, remark);
+                    public void onFailure(int code, String remark) {
+                        super.onFailure(code, remark);
 
                         if(code==CODE_INVALID_FILE_TYPE){
                             Toast.makeText(context,"不支持的文件格式。",Toast.LENGTH_LONG).show();
@@ -1178,7 +1164,7 @@ public class LegalCaseViewModel extends AbstractViewModel<FragmentLegalCaseBindi
 
                 NetworkAccessKit.postData(context, ApiKit.URL_LEGAL_CASE_UPDATE_FILES, jsonData, new NetworkAccessKit.DefaultCallback() {
                     @Override
-                    public void success(Object data) {
+                    public void onSuccess(Object data) {
                         Toast.makeText(context, "文件更新成功。", Toast.LENGTH_LONG).show();
                         ((Activity) context).finish();
                     }

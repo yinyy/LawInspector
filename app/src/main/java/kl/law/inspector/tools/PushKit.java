@@ -29,7 +29,7 @@ public class PushKit {
                 apiKey = metaData.getString(metaKey);
             }
         } catch (PackageManager.NameNotFoundException e) {
-            Log.e("TEST", "error " + e.getMessage());
+            Log.e("TEST", "onError " + e.getMessage());
         }
         return apiKey;
     }

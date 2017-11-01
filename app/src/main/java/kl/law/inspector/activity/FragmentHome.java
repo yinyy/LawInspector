@@ -32,7 +32,7 @@ public class FragmentHome extends Fragment{
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_home, container, false);
-        viewModel = new HomeViewModel(getContext(), binding);
+        viewModel = new HomeViewModel(this, binding);
         viewModel.init();
 
         binding.setViewModel(viewModel);

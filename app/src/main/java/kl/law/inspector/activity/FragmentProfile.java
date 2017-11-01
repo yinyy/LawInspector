@@ -36,7 +36,7 @@ public class FragmentProfile extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         FragmentProfileBinding binding = DataBindingUtil.inflate(inflater, R.layout.fragment_profile, container, false);
-        ProfileViewModel viewModel = new ProfileViewModel(getContext(), binding);
+        ProfileViewModel viewModel = new ProfileViewModel(this, binding);
         viewModel.init();
         binding.setViewModel(viewModel);
 
