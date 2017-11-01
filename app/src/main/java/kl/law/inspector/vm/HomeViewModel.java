@@ -33,7 +33,6 @@ import kl.law.inspector.databinding.ItemToDoBinding;
 import kl.law.inspector.databinding.ViewPagerBinding;
 import kl.law.inspector.tools.ApiKit;
 import kl.law.inspector.tools.NetworkAccessKit;
-import kl.law.inspector.tools.RecyclerViewStatus;
 import kl.law.inspector.tools.RefreshRecyclerViewAdapter;
 import kl.law.inspector.tools.UserData;
 
@@ -45,7 +44,7 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
     private ViewPagerBinding[] viewPagerBindings;
     private SwipeRefreshLayout.OnRefreshListener[] onRefreshListener;
     private Handler importanceNotificationHandler;
-    private RecyclerViewStatus[] recyclerViewStatuses;
+    private ScrollRefreshStatusModel[] scrollRefreshStatusModels;
 
     public HomeViewModel(Fragment owner, final FragmentHomeBinding binding) {
         super(owner, binding);
@@ -124,14 +123,15 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
                 @Override
                 public void onRefresh() {
                     viewPagerBindings[finalIndex].swipeRefreshLayout.setRefreshing(false);
-                    recyclerViewStatuses[finalIndex].setLoaded(false);
 
-                    if (finalIndex == 0) {
-                        loadLegalCase();
-                    } else if (finalIndex == 1) {
-                        loadDocument();
-                    } else if (finalIndex == 2) {
-                        loadReminder();
+                    if(!scrollRefreshStatusModels[finalIndex].isLoading()) {
+                        if (finalIndex == 0) {
+                            loadLegalCase();
+                        } else if (finalIndex == 1) {
+                            loadDocument();
+                        } else if (finalIndex == 2) {
+                            loadReminder();
+                        }
                     }
                 }
             };
@@ -182,7 +182,11 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
         binding.tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
-                int index = binding.tabLayout.getSelectedTabPosition();
+                int index = tab.getPosition();
+                if(!scrollRefreshStatusModels[index].isFirst()){
+                    return ;
+                }
+
                 if (index == 0) {
                     loadLegalCase();
                 } else if (index == 1) {
@@ -222,16 +226,14 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
         viewPagerBindings[2].recycleView.setAdapter(adapterReminder);
         viewPagerBindings[2].swipeRefreshLayout.setOnRefreshListener(onRefreshListener[2]);
 
-        recyclerViewStatuses = new RecyclerViewStatus[viewPagerBindings.length];
-        for(int index=0;index<recyclerViewStatuses.length;index++){
-            recyclerViewStatuses[index] = new RecyclerViewStatus();
-            recyclerViewStatuses[index].setLoaded(false);
+        scrollRefreshStatusModels = new ScrollRefreshStatusModel[viewPagerBindings.length];
+        for(int index = 0; index< scrollRefreshStatusModels.length; index++){
+            scrollRefreshStatusModels[index] = new ScrollRefreshStatusModel();
+            scrollRefreshStatusModels[index].setLoading(false);
         }
 
         loadNotifications();
         loadLegalCase();
-//       loadDocument();
-//       loadReminder();
     }
 
     public void onResume() {
@@ -278,11 +280,11 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
     }
 
     private void loadLegalCase(){
-        if(recyclerViewStatuses[0].isLoaded()){
+        if(scrollRefreshStatusModels[0].isLoading()){
             return ;
         }
 
-        recyclerViewStatuses[0].setLoaded(true);
+        scrollRefreshStatusModels[0].setLoading(true);
 
         final RefreshRecyclerViewAdapter<LegalCaseViewModel.ItemViewModel> adapter = (RefreshRecyclerViewAdapter<LegalCaseViewModel.ItemViewModel>) viewPagerBindings[0].recycleView.getAdapter();
         adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
@@ -297,8 +299,6 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
             @Override
             public void onSuccess(JSONArray jsonArray) {
                 if(jsonArray!=null) {
-                    //todoViewModel.count.set(jsonArray.length());
-
                     for (int i = 0; i < jsonArray.length(); i++) {
                         JSONObject jsonObject = jsonArray.optJSONObject(i);
                         LegalCaseViewModel.ItemViewModel vm = new LegalCaseViewModel.ItemViewModel();
@@ -333,21 +333,25 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
 
                 adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
                 adapter.notifyDataSetChanged();
+
+                scrollRefreshStatusModels[0].setLoading(false);
             }
 
             @Override
             public void handleFailureAndError() {
                 adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
+
+                scrollRefreshStatusModels[0].setLoading(false);
             }
         });
     }
 
     private void loadDocument(){
-        if(recyclerViewStatuses[1].isLoaded()){
+        if(scrollRefreshStatusModels[1].isLoading()){
             return ;
         }
 
-        recyclerViewStatuses[1].setLoaded(true);
+        scrollRefreshStatusModels[1].setLoading(true);
 
         final RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel> adapter = (RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel>) viewPagerBindings[1].recycleView.getAdapter();
         adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
@@ -383,21 +387,25 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
 
                 adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
                 adapter.notifyDataSetChanged();
+
+                scrollRefreshStatusModels[1].setLoading(false);
             }
 
             @Override
             public void handleFailureAndError() {
                 adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
+
+                scrollRefreshStatusModels[1].setLoading(false);
             }
         });
     }
 
     private void loadReminder(){
-        if(recyclerViewStatuses[2].isLoaded()){
+        if(scrollRefreshStatusModels[2].isLoading()){
             return;
         }
 
-        recyclerViewStatuses[2].setLoaded(true);
+        scrollRefreshStatusModels[2].setLoading(true);
 
         final RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel> adapter = (RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel>) viewPagerBindings[2].recycleView.getAdapter();
         adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
@@ -433,11 +441,15 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
 
                 adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
                 adapter.notifyDataSetChanged();
+
+                scrollRefreshStatusModels[2].setLoading(false);
             }
 
             @Override
             public void handleFailureAndError() {
                 adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
+
+                scrollRefreshStatusModels[2].setLoading(false);
             }
         });
     }

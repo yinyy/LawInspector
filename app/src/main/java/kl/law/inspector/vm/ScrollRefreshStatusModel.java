@@ -1,19 +1,18 @@
-package kl.law.inspector.tools;
+package kl.law.inspector.vm;
 
 /**
  * Created by yinyy on 2017/10/31.
  */
 
-public class RecyclerViewStatus {
+public class ScrollRefreshStatusModel {
     private boolean loading;
     private boolean moreElements;
-    private boolean loaded;
     private int page;
+    private boolean first = true;
 
-    public RecyclerViewStatus(){
+    public ScrollRefreshStatusModel(){
         setLoading(false);
         setHasMoreElements(false);
-        setLoaded(false);
         setPage(0);
     }
 
@@ -33,14 +32,6 @@ public class RecyclerViewStatus {
         this.moreElements = moreElements;
     }
 
-    public boolean isLoaded() {
-        return loaded;
-    }
-
-    public void setLoaded(boolean loaded) {
-        this.loaded = loaded;
-    }
-
     public int getPage() {
         return page;
     }
@@ -52,5 +43,14 @@ public class RecyclerViewStatus {
     public int nextPage(){
         page++;
         return page;
+    }
+
+    public boolean isFirst(){
+        if(first){
+            first = false;
+            return true;
+        }else{
+            return false;
+        }
     }
 }

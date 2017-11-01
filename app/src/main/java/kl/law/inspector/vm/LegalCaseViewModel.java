@@ -10,6 +10,7 @@ import android.databinding.ObservableBoolean;
 import android.databinding.ObservableField;
 import android.databinding.ObservableInt;
 import android.provider.MediaStore;
+import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.PagerAdapter;
@@ -56,7 +57,6 @@ import kl.law.inspector.databinding.ViewPagerBinding;
 import kl.law.inspector.tools.ApiKit;
 import kl.law.inspector.tools.FileKit;
 import kl.law.inspector.tools.NetworkAccessKit;
-import kl.law.inspector.tools.RecyclerViewStatus;
 import kl.law.inspector.tools.RefreshRecyclerViewAdapter;
 import kl.law.inspector.tools.SimpleRecycleViewAdapter;
 import kl.law.inspector.tools.UserData;
@@ -68,7 +68,7 @@ import kl.law.inspector.tools.UserData;
 
 public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLegalCaseBinding>{
     private ViewPagerBinding[] viewPagerBindings;
-    private RecyclerViewStatus[] recyclerViewStatuses;
+    private ScrollRefreshStatusModel[] scrollRefreshStatusModels;
 
     public LegalCaseViewModel(Fragment owner, FragmentLegalCaseBinding binding) {
         super(owner, binding);
@@ -82,9 +82,9 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
                 DataBindingUtil.inflate(layoutInflater, R.layout.view_pager, null, false),
                 DataBindingUtil.inflate(layoutInflater, R.layout.view_pager, null, false)};
 
-        recyclerViewStatuses = new RecyclerViewStatus[viewPagerBindings.length];
-        for (int index = 0; index < recyclerViewStatuses.length; index++) {
-            recyclerViewStatuses[index] = new RecyclerViewStatus();
+        scrollRefreshStatusModels = new ScrollRefreshStatusModel[viewPagerBindings.length];
+        for (int index = 0; index < scrollRefreshStatusModels.length; index++) {
+            scrollRefreshStatusModels[index] = new ScrollRefreshStatusModel();
         }
 
         DividerItemDecoration decoration = new DividerItemDecoration(context, DividerItemDecoration.VERTICAL);
@@ -147,21 +147,19 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
                 public void onRefresh() {
                     viewPagerBindings[finalIndex].swipeRefreshLayout.setRefreshing(false);
 
-                    recyclerViewStatuses[finalIndex].setPage(0);
-                    recyclerViewStatuses[finalIndex].setHasMoreElements(true);
+                    if(!scrollRefreshStatusModels[finalIndex].isLoading()){
+                        RefreshRecyclerViewAdapter adapter = (RefreshRecyclerViewAdapter) viewPagerBindings[finalIndex].recycleView.getAdapter();
+                        adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
 
-                    RefreshRecyclerViewAdapter adapter = (RefreshRecyclerViewAdapter) viewPagerBindings[finalIndex].recycleView.getAdapter();
-                    List<ItemViewModel> datas = adapter.getData();
+                        scrollRefreshStatusModels[finalIndex].setPage(0);
+                        scrollRefreshStatusModels[finalIndex].setHasMoreElements(true);
+                        scrollRefreshStatusModels[finalIndex].setLoading(true);
+                        adapter.getData().clear();
+                        adapter.notifyDataSetChanged();
+                        scrollRefreshStatusModels[finalIndex].setLoading(false);
 
-                    if(datas.size()==0) {
                         loadLegalCase(finalIndex);
                     }
-
-                    datas.clear();
-                    adapter.notifyDataSetChanged();
-
-                    RefreshRecyclerViewAdapter.FooterViewModel footer = adapter.getFooterViewModel();
-                    footer.status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
                 }
             });
             viewPagerBindings[index].recycleView.addOnScrollListener(new RecyclerView.OnScrollListener() {
@@ -173,14 +171,34 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
                     int childCount = recyclerView.getAdapter().getItemCount();
                     int firstVisibleIndex = ((LinearLayoutManager) recyclerView.getLayoutManager()).findFirstVisibleItemPosition();
 
-                    if (recyclerViewStatuses[finalIndex].hasMoreElements() && !recyclerViewStatuses[finalIndex].isLoading() && (firstVisibleIndex + visibleCount >= childCount)) {
-                        recyclerViewStatuses[finalIndex].setLoading(true);
-
+                    if (scrollRefreshStatusModels[finalIndex].hasMoreElements() && !scrollRefreshStatusModels[finalIndex].isLoading() && (firstVisibleIndex + visibleCount >= childCount)) {
                         loadLegalCase(finalIndex);
                     }
                 }
             });
         }
+
+        binding.tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                int index = tab.getPosition();
+                if(!scrollRefreshStatusModels[index].isFirst()){
+                    return ;
+                }
+
+                loadLegalCase(tab.getPosition());
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+
+            }
+        });
 
         loadLegalCase(0);
     }
@@ -189,23 +207,24 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
     }
 
     private void loadLegalCase(final int index) {
-        String url = ApiKit.URL_LEGAL_CASE_LIST(recyclerViewStatuses[index].nextPage(), index + 1, UserData.getInstance().getId());
+        if(scrollRefreshStatusModels[index].isLoading()){
+            return ;
+        }
 
-        NetworkAccessKit.getData(context, url, new NetworkAccessKit.DefaultCallback<JSONObject>() {
+        scrollRefreshStatusModels[index].setLoading(true);
 
+        NetworkAccessKit.getData(context, ApiKit.URL_LEGAL_CASE_LIST(scrollRefreshStatusModels[index].nextPage(), index + 1, UserData.getInstance().getId()), new NetworkAccessKit.DefaultCallback<JSONObject>() {
             @Override
             public void onSuccess(JSONObject data) {
-                recyclerViewStatuses[index].setLoading(false);
-
                 RefreshRecyclerViewAdapter<ItemViewModel> adapter = (RefreshRecyclerViewAdapter<ItemViewModel>) viewPagerBindings[index].recycleView.getAdapter();
                 List<ItemViewModel> datas = adapter.getData();
 
                 int pagecount = data.optInt("pagecount", 0);
-                if (pagecount > recyclerViewStatuses[index].getPage()) {
+                if (pagecount > scrollRefreshStatusModels[index].getPage()) {
                     adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
                 } else {
                     adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
-                    recyclerViewStatuses[index].setHasMoreElements(false);
+                    scrollRefreshStatusModels[index].setHasMoreElements(false);
                 }
 
                 JSONArray jsonArray = data.optJSONArray("data");
@@ -231,13 +250,15 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
                 }
 
                 adapter.notifyDataSetChanged();
-                recyclerViewStatuses[index].setLoading(false);
+
+                scrollRefreshStatusModels[index].setLoading(false);
             }
 
             @Override
             public void handleFailureAndError() {
-                recyclerViewStatuses[index].setLoading(false);
-                recyclerViewStatuses[index].setHasMoreElements(false);
+                scrollRefreshStatusModels[index].setHasMoreElements(false);
+                scrollRefreshStatusModels[index].setLoading(false);
+
                 Toast.makeText(context, "加载数据时发生错误，请稍后重试。", Toast.LENGTH_LONG).show();
             }
         });
