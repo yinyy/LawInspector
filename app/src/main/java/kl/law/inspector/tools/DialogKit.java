@@ -35,4 +35,8 @@ public class DialogKit {
             loadingDialog.hide();
         }
     }
+
+    public static void showMessage(Context context, String message){
+        new AlertDialog.Builder(context).setTitle("提示").setMessage(message).setPositiveButton("确定", null).show();
+    }
 }

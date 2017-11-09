@@ -135,4 +135,18 @@ public class ProfileViewModel extends AbstractViewModel<Fragment, FragmentProfil
             }
         });
     }
+
+    public void onNotificationClicked(View view){
+        NetworkAccessKit.getData(context, ApiKit.URL_PUSH_MESSAGE(UserData.getInstance().getId(), "test"), new NetworkAccessKit.DefaultCallback<JSONObject>() {
+            @Override
+            public void onSuccess(JSONObject data) {
+                Toast.makeText(context, "消息推送成功。", Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onFailure(int code, String remark) {
+                Toast.makeText(context, "消息推送失败。", Toast.LENGTH_LONG).show();
+            }
+        });
+    }
 }

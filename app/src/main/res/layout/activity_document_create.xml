@@ -37,8 +37,8 @@
                 <Button
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_button_normal"
-                    android:text="提交审核"
+                    style="@style/MyApp.BlueButton"
+                    android:text="公文提报"
                     android:textColor="@color/colorNormalButtonText"
                     android:onClick="@{viewModel.onSubmit}"/>
             </LinearLayout>

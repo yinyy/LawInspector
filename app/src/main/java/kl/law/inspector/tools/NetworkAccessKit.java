@@ -133,7 +133,7 @@ public final class NetworkAccessKit {
                 callback.onError("发生严重错误。");
             }
         });
-        request.setRetryPolicy(new DefaultRetryPolicy(10*1000, 1, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+        request.setRetryPolicy(new DefaultRetryPolicy(30*1000, 0, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         queue.add(request);
     }
 

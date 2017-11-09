@@ -11,6 +11,7 @@ public class UserData {
     private String officeId;
     private String officeName;
     private String no;
+    private String channelId;
 
     private static UserData user;
 
@@ -73,4 +74,13 @@ public class UserData {
     public void setNo(String no) {
         this.no = no;
     }
+
+    public String getChannelId() {
+        return channelId;
+    }
+
+    public void setChannelId(String channelId) {
+        this.channelId = channelId;
+    }
+
 }

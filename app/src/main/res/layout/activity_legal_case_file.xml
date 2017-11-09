@@ -105,12 +105,12 @@
                 android:layout_marginTop="12dp"
                 android:orientation="vertical">
                 <Button
+                    android:enabled="@{viewModel.buttonEnabled}"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_button_normal"
                     android:text="更新数据"
                     android:onClick="@{viewModel.onSubmitClicked}"
-                    android:textColor="@color/colorNormalButtonText"/>
+                    style="@style/MyApp.GreenButton"/>
             </LinearLayout>
 
             <LinearLayout style="@style/MyApp.ContentLine"
@@ -118,12 +118,12 @@
                 android:orientation="vertical"
                 android:visibility="@{viewModel.showFinishedButton?View.VISIBLE:View.GONE}">
                 <Button
+                    android:enabled="@{viewModel.buttonEnabled}"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_button_attachment"
-                    android:text="确定，调查完成"
+                    android:text="调查完成"
                     android:onClick="@{viewModel.onFinishedClicked}"
-                    android:textColor="@color/colorNormalButtonText"/>
+                    style="@style/MyApp.BlueButton"/>
             </LinearLayout>
 
         </LinearLayout>

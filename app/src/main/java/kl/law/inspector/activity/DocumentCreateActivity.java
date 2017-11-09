@@ -1,7 +1,5 @@
 package kl.law.inspector.activity;
 
-import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.databinding.DataBindingUtil;
 import android.graphics.Bitmap;
@@ -41,12 +39,7 @@ public class DocumentCreateActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-                new AlertDialog.Builder(this).setTitle("提示").setMessage("是否放弃本次公文的录入？").setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        finish();
-                    }
-                }).setNegativeButton("取消", null).show();
+                finish();
                 break;
         }
         return super.onOptionsItemSelected(item);

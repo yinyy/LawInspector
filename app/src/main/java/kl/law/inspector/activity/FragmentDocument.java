@@ -39,6 +39,7 @@ public class FragmentDocument extends Fragment {
         FragmentDocumentBinding binding = DataBindingUtil.inflate(inflater, R.layout.fragment_document, container, false);
         viewModel = new DocumentViewModel(this, binding);
         viewModel.init();
+        binding.setViewModel(viewModel);
 
         return binding.getRoot();
     }
@@ -57,11 +58,12 @@ public class FragmentDocument extends Fragment {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        Intent intent = new Intent(getActivity(), DocumentCreateActivity.class);
+        Intent intent;
 
         switch (item.getItemId()){
             case R.id.menu_item_create:
-                startActivity(intent);
+                intent = new Intent(getActivity(), DocumentCreateActivity.class);
+                getActivity().startActivityForResult(intent, DocumentViewModel.REQUEST_CODE_CREATE);
                 break;
         }
 

@@ -41,7 +41,9 @@
             android:name="api_key"
             android:value="GRXsGtkIyZ0KPn9coWEmDu1j" />
 
-        <activity android:name=".activity.MainActivity" />
+        <activity
+            android:name=".activity.MainActivity"
+            android:launchMode="singleTop" />
         <activity android:name=".activity.LoginActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -60,10 +62,6 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <activity
-            android:name=".activity.Main2Activity"
-            android:label="@string/title_activity_main2"
-            android:theme="@style/AppTheme.NoActionBar" />
         <activity android:name=".activity.LegalCaseCreateActivity" />
         <activity android:name=".activity.LegalCaseApproveActivity" />
         <activity android:name=".activity.LegalCaseDetailActivity" />
@@ -143,6 +141,7 @@
         </receiver>
 
         <activity android:name=".activity.LegalCaseStatisticsActivity" />
+        <activity android:name=".activity.DocumentApproveActivity"></activity>
     </application>
 
 </manifest>

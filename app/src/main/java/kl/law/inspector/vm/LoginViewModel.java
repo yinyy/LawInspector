@@ -99,20 +99,18 @@ public class LoginViewModel extends AbstractViewModel<Activity, ActivityLoginBin
                 editor.putString("password", password);
                 editor.putBoolean("isRememberPassword", isRemember);
                 editor.putBoolean("isAutoLogin", isAutoLogin);
+                editor.putString("channelId", userData.optString("baiduPushChannelId"));
                 editor.commit();
 
                 UserData user = UserData.getInstance();
-                try {
-                    //记录用户信息
-                    user.setId(userData.getString("id"));
-                    user.setName(userData.getString("name"));
-                    user.setOfficeId(userData.getString("officeId"));
-                    user.setOfficeName(userData.getString("officeName"));
-                    user.setNo(userData.getString("no"));
-                    user.setUsername(username);
-                }catch (Exception e){
-                    e.printStackTrace();
-                }
+                //记录用户信息
+                user.setId(userData.optString("id"));
+                user.setName(userData.optString("name"));
+                user.setOfficeId(userData.optString("officeId"));
+                user.setOfficeName(userData.optString("officeName"));
+                user.setNo(userData.optString("no"));
+                user.setChannelId(userData.optString("baiduPushChannelId"));
+                user.setUsername(username);
 
                 Intent intent = new Intent(context, MainActivity.class);
                 context.startActivity(intent);

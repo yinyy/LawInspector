@@ -122,8 +122,6 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
             onRefreshListener[index] = new SwipeRefreshLayout.OnRefreshListener() {
                 @Override
                 public void onRefresh() {
-                    viewPagerBindings[finalIndex].swipeRefreshLayout.setRefreshing(false);
-
                     if(!scrollRefreshStatusModels[finalIndex].isLoading()) {
                         if (finalIndex == 0) {
                             loadLegalCase();
@@ -183,16 +181,14 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 int index = tab.getPosition();
-                if(!scrollRefreshStatusModels[index].isFirst()){
-                    return ;
-                }
-
-                if (index == 0) {
-                    loadLegalCase();
-                } else if (index == 1) {
-                    loadDocument();
-                } else if (index == 2) {
-                    loadReminder();
+                if(scrollRefreshStatusModels[index].isFirst()) {
+                    if (index == 0) {
+                        loadLegalCase();
+                    } else if (index == 1) {
+                        loadDocument();
+                    } else if (index == 2) {
+                        loadReminder();
+                    }
                 }
             }
 
@@ -233,10 +229,10 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
         }
 
         loadNotifications();
-        loadLegalCase();
-    }
 
-    public void onResume() {
+        if(scrollRefreshStatusModels[0].isFirst()) {
+            loadLegalCase();
+        }
     }
 
     private void loadNotifications() {
@@ -279,9 +275,13 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
         });
     }
 
-    private void loadLegalCase(){
+    public void loadLegalCase(){
         if(scrollRefreshStatusModels[0].isLoading()){
             return ;
+        }
+
+        if(!viewPagerBindings[0].swipeRefreshLayout.isRefreshing()){
+            viewPagerBindings[0].swipeRefreshLayout.setRefreshing(true);
         }
 
         scrollRefreshStatusModels[0].setLoading(true);
@@ -335,6 +335,7 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
                 adapter.notifyDataSetChanged();
 
                 scrollRefreshStatusModels[0].setLoading(false);
+                viewPagerBindings[0].swipeRefreshLayout.setRefreshing(false);
             }
 
             @Override
@@ -342,13 +343,18 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
                 adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
 
                 scrollRefreshStatusModels[0].setLoading(false);
+                viewPagerBindings[0].swipeRefreshLayout.setRefreshing(false);
             }
         });
     }
 
-    private void loadDocument(){
+    public void loadDocument(){
         if(scrollRefreshStatusModels[1].isLoading()){
             return ;
+        }
+
+        if(!viewPagerBindings[1].swipeRefreshLayout.isRefreshing()){
+            viewPagerBindings[1].swipeRefreshLayout.setRefreshing(true);
         }
 
         scrollRefreshStatusModels[1].setLoading(true);
@@ -362,21 +368,38 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
         final ItemToDoBinding todoBinding = DataBindingUtil.getBinding(binding.tabLayout.getTabAt(1).getCustomView());
         final TodoViewModel todoViewModel = todoBinding.getViewModel();
 
-        NetworkAccessKit.getData(context, ApiKit.URL_DOCUMENT_TODO_LIST(UserData.getInstance().getId()), new NetworkAccessKit.DefaultCallback<JSONArray>() {
+        NetworkAccessKit.getData(context, ApiKit.URL_DOCUMENT_TODO_LIST(UserData.getInstance().getId()), new NetworkAccessKit.DefaultCallback<JSONObject>() {
             @Override
-            public void onSuccess(JSONArray jsonArray) {
-                if(jsonArray!=null) {
+            public void onSuccess(JSONObject data) {
+                if(data!=null) {
                     //todoViewModel.count.set(jsonArray.length());
 
+                    JSONArray jsonArray = data.optJSONArray("data");
                     for (int i = 0; i < jsonArray.length(); i++) {
                         try {
                             JSONObject jsonObject = jsonArray.getJSONObject(i);
 
                             DocumentViewModel.ItemViewModel vm = new DocumentViewModel.ItemViewModel();
-                            vm.setId(i + "");
-                            vm.title.set("关于某某事情的决定" + i);
-                            vm.created.set("2017/10/05");
-                            vm.progressCode.set(i);
+                            vm.setId(jsonObject.optString("id"));
+                            vm.title.set(jsonObject.optString("docTitle"));
+                            vm.created.set("公文创建时间");
+
+                            int progressCode = Integer.parseInt(jsonObject.optString("dRStage"));
+                            vm.progressCode.set(progressCode);
+
+                            if(progressCode==0){
+                                vm.progress.set("办公室审批");
+                            }else if(progressCode==1){
+                                vm.progress.set("领导批示");
+                            }else if(progressCode==2){
+                                vm.progress.set("公文转送");
+                            }else if(progressCode==3){
+                                vm.progress.set("公文传阅");
+                            }else if(progressCode==4){
+                                vm.progress.set("公文归档");
+                            }
+
+                            vm.setClickAction(DocumentViewModel.ItemViewModel.CLICK_ACTION_APPROVE);
 
                             datas.add(vm);
                         } catch (Exception e) {
@@ -389,6 +412,7 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
                 adapter.notifyDataSetChanged();
 
                 scrollRefreshStatusModels[1].setLoading(false);
+                viewPagerBindings[1].swipeRefreshLayout.setRefreshing(false);
             }
 
             @Override
@@ -396,6 +420,7 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
                 adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
 
                 scrollRefreshStatusModels[1].setLoading(false);
+                viewPagerBindings[1].swipeRefreshLayout.setRefreshing(false);
             }
         });
     }
@@ -403,6 +428,10 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
     private void loadReminder(){
         if(scrollRefreshStatusModels[2].isLoading()){
             return;
+        }
+
+        if(!viewPagerBindings[2].swipeRefreshLayout.isRefreshing()){
+            viewPagerBindings[2].swipeRefreshLayout.setRefreshing(true);
         }
 
         scrollRefreshStatusModels[2].setLoading(true);
@@ -443,6 +472,7 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
                 adapter.notifyDataSetChanged();
 
                 scrollRefreshStatusModels[2].setLoading(false);
+                viewPagerBindings[2].swipeRefreshLayout.setRefreshing(false);
             }
 
             @Override
@@ -450,6 +480,7 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
                 adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
 
                 scrollRefreshStatusModels[2].setLoading(false);
+                viewPagerBindings[2].swipeRefreshLayout.setRefreshing(false);
             }
         });
     }

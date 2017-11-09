@@ -36,7 +36,7 @@
                 <TextView style="@style/MyApp.Label"
                     android:text="案件标题："/>
                 <TextView style="@style/MyApp.Content"
-                    android:text="@{viewModel.title}"/>
+                    android:text="@{viewModel.title}" />
             </LinearLayout>
 
             <LinearLayout style="@style/MyApp.ContentLine">
@@ -69,7 +69,7 @@
 
             <LinearLayout style="@style/MyApp.ContentLine">
                 <TextView style="@style/MyApp.Label"
-                    android:text="案情简述："/>
+                    android:text="案情描述："/>
                 <TextView style="@style/MyApp.Content"
                     android:text="@{viewModel.description}"/>
             </LinearLayout>
@@ -86,14 +86,14 @@
                 <TextView style="@style/MyApp.Label"
                     android:text="承办人意见："/>
                 <TextView style="@style/MyApp.Content"
-                    android:text="@{viewModel.memberOpinion}"/>
+                    android:text="@{viewModel.memberOpinion2}"/>
             </LinearLayout>
 
             <LinearLayout style="@style/MyApp.ContentLine">
                 <TextView style="@style/MyApp.Label"
                     android:text="承办机构意见："/>
                 <TextView style="@style/MyApp.Content"
-                    android:text="@{viewModel.departmentOpinion}"/>
+                    android:text="@{viewModel.departmentOpinion2}"/>
             </LinearLayout>
 
             <LinearLayout style="@style/MyApp.ContentLine"
@@ -101,7 +101,7 @@
                 <TextView style="@style/MyApp.Label"
                     android:text="案管中心意见："/>
                 <TextView style="@style/MyApp.Content"
-                    android:text="@{viewModel.centerOpinion}"/>
+                    android:text="@{viewModel.centerOpinion2}"/>
             </LinearLayout>
 
             <LinearLayout style="@style/MyApp.ContentLine"
@@ -109,14 +109,14 @@
                 <TextView style="@style/MyApp.Label"
                     android:text="分管领导意见："/>
                 <TextView style="@style/MyApp.Content"
-                    android:text="@{viewModel.branchOpioion}"/>
+                    android:text="@{viewModel.branchOpioion2}"/>
             </LinearLayout>
 
             <LinearLayout style="@style/MyApp.ContentLine">
                 <TextView style="@style/MyApp.Label"
                     android:text="主要领导意见："/>
                 <TextView style="@style/MyApp.Content"
-                    android:text="@{viewModel.primaryOpinion}"/>
+                    android:text="@{viewModel.primaryOpinion2}"/>
             </LinearLayout>
 
 
@@ -263,26 +263,56 @@
 
             <LinearLayout style="@style/MyApp.ContentLine"
                 android:padding="0dp"
-                android:layout_marginTop="12dp">
-                <Button
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_margin="8dp"
-                    android:background="@drawable/bg_button_decline"
-                    android:text="拒绝"
-                    android:onClick="@{viewModel.onDeclineClicked}"
-                    android:textColor="@color/colorNormalButtonText" />
+                android:layout_marginTop="12dp"
+                android:visibility="@{step==1?View.GONE:View.VISIBLE}">
 
                 <Button
+                    android:enabled="@{viewModel.buttonEnabled}"
+                    style="@style/MyApp.RedButton"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:layout_margin="8dp"
-                    android:background="@drawable/bg_button_normal"
-                    android:text="提交审核"
+                    android:layout_weight="1"
+                    android:onClick="@{viewModel.onDeclineClicked}"
+                    android:text="驳回"/>
+
+                <Button
+                    android:enabled="@{viewModel.buttonEnabled}"
+                    style="@style/MyApp.BlueButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:layout_weight="1"
                     android:onClick="@{viewModel.onSubmitClicked}"
-                    android:textColor="@color/colorNormalButtonText" />
+                    android:visibility="@{stage==4 &amp;&amp; step==5?View.GONE:View.VISIBLE}"
+                    android:text="通过" />
+
+                <Button
+                    android:enabled="@{viewModel.buttonEnabled}"
+                    style="@style/MyApp.BlueButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:layout_weight="1"
+                    android:onClick="@{viewModel.onSubmitClicked}"
+                    android:visibility="@{stage==4 &amp;&amp; step==5?View.VISIBLE:View.GONE}"
+                    android:text="结案" />
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine"
+                android:padding="0dp"
+                android:layout_marginTop="12dp"
+                android:visibility="@{step==1?View.VISIBLE:View.GONE}">
+
+                <Button
+                    android:enabled="@{viewModel.buttonEnabled}"
+                    style="@style/MyApp.BlueButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:layout_weight="1"
+                    android:onClick="@{viewModel.onSubmitClicked}"
+                    android:text="提交审核" />
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

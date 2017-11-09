@@ -241,6 +241,52 @@
                     android:layout_height="wrap_content"
                     android:background="#ffffff"
                     android:padding="16dp"
+                    android:onClick="@{viewModel.onNotificationClicked}">
+
+                    <ImageView
+                        android:id="@+id/imageView1111"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_marginBottom="0dp"
+                        android:layout_marginLeft="0dp"
+                        android:layout_marginTop="0dp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintLeft_toLeftOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        android:src="@drawable/ic_notification" />
+
+                    <TextView
+                        android:id="@+id/textView6411"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:layout_marginLeft="16dp"
+                        android:layout_marginTop="8dp"
+                        android:text="测试推送"
+                        android:textColor="@color/colorNormalTitle"
+                        android:textSize="18sp"
+                        app:layout_constraintBottom_toBottomOf="@+id/imageView1111"
+                        app:layout_constraintLeft_toRightOf="@+id/imageView1111"
+                        app:layout_constraintTop_toTopOf="@+id/imageView1111" />
+                </android.support.constraint.ConstraintLayout>
+            </LinearLayout>
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#ffffff"
+                android:paddingRight="16dp"
+                android:paddingLeft="16dp">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#ebebeb"/>
+            </RelativeLayout>
+            <LinearLayout style="@style/MyApp.ContentLine">
+                <android.support.constraint.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#ffffff"
+                    android:padding="16dp"
                     android:onClick="@{viewModel.onQuitClicked}">
 
                     <ImageView

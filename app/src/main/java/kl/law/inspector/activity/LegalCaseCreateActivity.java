@@ -1,8 +1,5 @@
 package kl.law.inspector.activity;
 
-import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.content.Intent;
 import android.databinding.DataBindingUtil;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -29,18 +26,9 @@ public class LegalCaseCreateActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()){
+        switch (item.getItemId()) {
             case android.R.id.home:
-                new AlertDialog.Builder(this).setTitle("提示").setMessage("是否放弃本次案例的录入？").setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        Intent intent = new Intent();
-                        intent.putExtra("cancel", true);
-
-                        setResult(FragmentLegalCase.REQUEST_CREATE, intent);
-                        finish();
-                    }
-                }).setNegativeButton("取消", null).show();
+                finish();
                 break;
         }
         return super.onOptionsItemSelected(item);

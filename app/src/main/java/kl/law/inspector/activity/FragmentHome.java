@@ -39,11 +39,4 @@ public class FragmentHome extends Fragment{
 
         return binding.getRoot();
     }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-
-        viewModel.onResume();
-    }
 }

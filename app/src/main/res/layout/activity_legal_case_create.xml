@@ -58,7 +58,7 @@
                         android:text="案件来源："/>
                     <Spinner
                         android:id="@+id/sourceSpinner"
-                    adapter="@{viewModel.sourceAdapter}"
+                        adapter="@{viewModel.sourceAdapter}"
                         style="@style/MyApp.Content"/>
                 </LinearLayout>
 
@@ -137,10 +137,9 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:background="@drawable/bg_button_normal"
                         android:onClick="@{viewModel.onSubmit}"
                         android:text="提交审核"
-                        android:textColor="@color/colorNormalButtonText"/>
+                        style="@style/MyApp.BlueButton"/>
                 </LinearLayout>
 
             </LinearLayout>

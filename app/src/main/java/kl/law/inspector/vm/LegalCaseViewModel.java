@@ -19,13 +19,14 @@ import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
-import android.widget.Button;
 import android.widget.SimpleAdapter;
 import android.widget.Toast;
 
@@ -42,7 +43,6 @@ import java.util.Map;
 
 import kl.law.inspector.BR;
 import kl.law.inspector.R;
-import kl.law.inspector.activity.FragmentLegalCase;
 import kl.law.inspector.activity.LegalCaseApproveActivity;
 import kl.law.inspector.activity.LegalCaseDetailActivity;
 import kl.law.inspector.activity.LegalCaseFileActivity;
@@ -55,6 +55,7 @@ import kl.law.inspector.databinding.ActivityLegalCaseProgressBinding;
 import kl.law.inspector.databinding.FragmentLegalCaseBinding;
 import kl.law.inspector.databinding.ViewPagerBinding;
 import kl.law.inspector.tools.ApiKit;
+import kl.law.inspector.tools.DialogKit;
 import kl.law.inspector.tools.FileKit;
 import kl.law.inspector.tools.NetworkAccessKit;
 import kl.law.inspector.tools.RefreshRecyclerViewAdapter;
@@ -67,6 +68,12 @@ import kl.law.inspector.tools.UserData;
  */
 
 public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLegalCaseBinding>{
+    public static final int REQUEST_CODE_CREATE = 0x01;
+    public static final int REQUEST_CODE_STATISTICS = 0x02;
+    public static final int REQUEST_CODE_FILE = 0x04;
+    public static final int REQUEST_CODE_DETAIL = 0x08;
+    public static final int REQUEST_CODE_APPROVE = 0x10;
+
     private ViewPagerBinding[] viewPagerBindings;
     private ScrollRefreshStatusModel[] scrollRefreshStatusModels;
 
@@ -76,7 +83,8 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
 
     public void init() {
         LayoutInflater layoutInflater = ((Activity) context).getLayoutInflater();
-        viewPagerBindings = new ViewPagerBinding[]{DataBindingUtil.inflate(layoutInflater, R.layout.view_pager, null, false),
+        viewPagerBindings = new ViewPagerBinding[]{
+                DataBindingUtil.inflate(layoutInflater, R.layout.view_pager, null, false),
                 DataBindingUtil.inflate(layoutInflater, R.layout.view_pager, null, false),
                 DataBindingUtil.inflate(layoutInflater, R.layout.view_pager, null, false),
                 DataBindingUtil.inflate(layoutInflater, R.layout.view_pager, null, false),
@@ -93,7 +101,11 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
             b.recycleView.addItemDecoration(decoration);
         }
 
-        final View[] views = new View[]{viewPagerBindings[0].getRoot(), viewPagerBindings[1].getRoot(), viewPagerBindings[2].getRoot(), viewPagerBindings[3].getRoot(), viewPagerBindings[4].getRoot()};
+        final View[] views = new View[viewPagerBindings.length];
+        for(int index=0;index<viewPagerBindings.length;index++){
+            views[index] = viewPagerBindings[index].getRoot();
+        }
+
         binding.viewPager.setAdapter(new PagerAdapter() {
             @Override
             public int getCount() {
@@ -145,20 +157,8 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
             viewPagerBindings[index].swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
                 @Override
                 public void onRefresh() {
-                    viewPagerBindings[finalIndex].swipeRefreshLayout.setRefreshing(false);
-
                     if(!scrollRefreshStatusModels[finalIndex].isLoading()){
-                        RefreshRecyclerViewAdapter adapter = (RefreshRecyclerViewAdapter) viewPagerBindings[finalIndex].recycleView.getAdapter();
-                        adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
-
-                        scrollRefreshStatusModels[finalIndex].setPage(0);
-                        scrollRefreshStatusModels[finalIndex].setHasMoreElements(true);
-                        scrollRefreshStatusModels[finalIndex].setLoading(true);
-                        adapter.getData().clear();
-                        adapter.notifyDataSetChanged();
-                        scrollRefreshStatusModels[finalIndex].setLoading(false);
-
-                        loadLegalCase(finalIndex);
+                        refreshLegalCase(finalIndex);
                     }
                 }
             });
@@ -182,11 +182,9 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 int index = tab.getPosition();
-                if(!scrollRefreshStatusModels[index].isFirst()){
-                    return ;
+                if (scrollRefreshStatusModels[index].isFirst()) {
+                    loadLegalCase(tab.getPosition());
                 }
-
-                loadLegalCase(tab.getPosition());
             }
 
             @Override
@@ -200,15 +198,35 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
             }
         });
 
-        loadLegalCase(0);
+        if(scrollRefreshStatusModels[0].isFirst()) {
+            loadLegalCase(0);
+        }
     }
 
     public void onResume(){
     }
 
+    public void refreshLegalCase(int index){
+        RefreshRecyclerViewAdapter adapter = (RefreshRecyclerViewAdapter) viewPagerBindings[index].recycleView.getAdapter();
+        adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
+
+        scrollRefreshStatusModels[index].setPage(0);
+        scrollRefreshStatusModels[index].setHasMoreElements(true);
+        scrollRefreshStatusModels[index].setLoading(true);
+        adapter.getData().clear();
+        adapter.notifyDataSetChanged();
+        scrollRefreshStatusModels[index].setLoading(false);
+
+        loadLegalCase(index);
+    }
+
     private void loadLegalCase(final int index) {
         if(scrollRefreshStatusModels[index].isLoading()){
             return ;
+        }
+
+        if(!viewPagerBindings[index].swipeRefreshLayout.isRefreshing()){
+            viewPagerBindings[index].swipeRefreshLayout.setRefreshing(true);
         }
 
         scrollRefreshStatusModels[index].setLoading(true);
@@ -252,12 +270,14 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
                 adapter.notifyDataSetChanged();
 
                 scrollRefreshStatusModels[index].setLoading(false);
+                viewPagerBindings[index].swipeRefreshLayout.setRefreshing(false);
             }
 
             @Override
             public void handleFailureAndError() {
                 scrollRefreshStatusModels[index].setHasMoreElements(false);
                 scrollRefreshStatusModels[index].setLoading(false);
+                viewPagerBindings[index].swipeRefreshLayout.setRefreshing(false);
 
                 Toast.makeText(context, "加载数据时发生错误，请稍后重试。", Toast.LENGTH_LONG).show();
             }
@@ -292,6 +312,7 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
                 @Override
                 public void onSuccess(JSONArray data) {
                     List<String> items = new LinkedList<String>();
+                    items.add("请选择");
 
                     for (int i = 0; i < data.length(); i++) {
                         try {
@@ -311,6 +332,7 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
                 @Override
                 public void onSuccess(JSONArray data) {
                     List<String> items = new LinkedList<String>();
+                    items.add("请选择");
 
                     for (int i = 0; i < data.length(); i++) {
                         try {
@@ -325,22 +347,40 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
                 }
             });
 
-            NetworkAccessKit.getData(context, ApiKit.URL_ARTICLE(ApiKit.ArticleCategory.LEGAL_PROVISION), new NetworkAccessKit.DefaultCallback<JSONArray>(){
+            List<String> items = new LinkedList<String>();
+            items.add("请选择");
+            legalProvisionAdapter.set(new ArrayAdapter<String>(context, R.layout.simple_spinner_item_1, items));
+
+            binding.behaviourSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                    String behavior = (String)parent.getAdapter().getItem(position);
+                    final ArrayAdapter<String> adapter = (ArrayAdapter<String>) binding.legalProvisionSpinner.getAdapter();
+                    adapter.clear();
+                    adapter.add("请选择");
+
+                    NetworkAccessKit.getData(context, ApiKit.URL_PROVISION_BY_BEHAVIOR(behavior), new NetworkAccessKit.DefaultCallback<JSONArray>() {
+
+                        @Override
+                        public void onSuccess(JSONArray data) {
+
+                            for (int i = 0; i < data.length(); i++) {
+                                try {
+                                    JSONObject jobj = data.getJSONObject(i);
+                                    adapter.add(jobj.getString("title"));
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
+
+                            adapter.notifyDataSetChanged();
+                        }
+                    });
+                }
 
                 @Override
-                public void onSuccess(JSONArray data) {
-                    List<String> items = new LinkedList<String>();
+                public void onNothingSelected(AdapterView<?> parent) {
 
-                    for (int i = 0; i < data.length(); i++) {
-                        try {
-                            JSONObject jobj = data.getJSONObject(i);
-                            items.add(jobj.getString("title"));
-                        }catch (Exception e){
-                            e.printStackTrace();
-                        }
-                    }
-
-                    legalProvisionAdapter.set(new ArrayAdapter<String>(context, R.layout.simple_spinner_item_1, items));
                 }
             });
 
@@ -374,6 +414,48 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
         }
 
         public void onSubmit(View view){
+            if(TextUtils.isEmpty(title.get().trim())){
+                DialogKit.showMessage(context, "请填写标题。");
+                return;
+            }
+
+            if(TextUtils.isEmpty(party.get().trim())){
+                DialogKit.showMessage(context, "请填写当事人。");
+                return;
+            }
+
+            if(TextUtils.isEmpty(address.get().trim())){
+                DialogKit.showMessage(context, "请填写地址。");
+                return;
+            }
+
+            if(TextUtils.isEmpty(corporation.get().trim())){
+                DialogKit.showMessage(context, "请填写法人。");
+                return;
+            }
+
+            if(TextUtils.isEmpty(phone.get().trim())){
+                DialogKit.showMessage(context, "请填写联系电话。");
+                return;
+            }
+
+            if("请选择".equals(binding.sourceSpinner.getSelectedItem().toString())){
+                DialogKit.showMessage(context, "请选择案件来源。");
+                return;
+            }
+
+            if("请选择".equals(binding.legalProvisionSpinner.getSelectedItem().toString())){
+                DialogKit.showMessage(context, "请选择法律条文。");
+                return;
+            }
+
+            if(TextUtils.isEmpty(description.get().trim())){
+                DialogKit.showMessage(context, "请填写详细案情描述。");
+                return;
+            }
+
+            view.setEnabled(false);
+
             String source = binding.sourceSpinner.getSelectedItem().toString();
             String behaviour = binding.behaviourSpinner.getSelectedItem().toString();
             String legalProvision = binding.legalProvisionSpinner.getSelectedItem().toString();
@@ -408,9 +490,7 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
                         //Log.d("TEST", "Create Legal Case, ID is " + data.optString("id") + ".");
                         Toast.makeText(context, "案件信息保存成功。", Toast.LENGTH_LONG).show();
 
-                        Intent intent = new Intent();
-                        intent.putExtra("cancel", true);
-                        owner.setResult(FragmentLegalCase.REQUEST_CREATE, intent);
+                        owner.setResult(Activity.RESULT_OK);
                         ((Activity)context).finish();
                     }
                 });
@@ -494,6 +574,7 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
         public void setId(String id){
             this.id = id;
         }
+        public String getId(){return id;}
 
         public void onItemClicked(View view) {
             if(clickAction==CLICK_ACTION_DETAIL) {
@@ -504,12 +585,12 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
                 Intent intent = new Intent(view.getContext(), LegalCaseApproveActivity.class);
                 intent.putExtra("id", id);
                 intent.putExtra("progressCode", progressCode.get());
-                view.getContext().startActivity(intent);
+                ((Activity)view.getContext()).startActivityForResult(intent, REQUEST_CODE_APPROVE);
             }else if(clickAction==CLICK_ACTION_FILE){
                 Intent intent = new Intent(view.getContext(), LegalCaseFileActivity.class);
                 intent.putExtra("id", id);
                 intent.putExtra("showFinishedButton", true);
-                view.getContext().startActivity(intent);
+                ((Activity)view.getContext()).startActivityForResult(intent, REQUEST_CODE_FILE);
             }
         }
     }
@@ -581,14 +662,21 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
         public final ObservableField<String> members = new ObservableField<>();
 
         public final ObservableField<String> memberOpinion = new ObservableField<>();
+        public final ObservableField<String> memberOpinion2 = new ObservableField<>();
         public final ObservableField<String> departmentOpinion = new ObservableField<>();
+        public final ObservableField<String> departmentOpinion2 = new ObservableField<>();
         public final ObservableField<String> centerOpinion = new ObservableField<>();
+        public final ObservableField<String> centerOpinion2 = new ObservableField<>();
         public final ObservableField<String> branchOpioion = new ObservableField<>();
+        public final ObservableField<String> branchOpioion2 = new ObservableField<>();
         public final ObservableField<String> primaryOpinion = new ObservableField<>();
+        public final ObservableField<String> primaryOpinion2 = new ObservableField<>();
 
         public final ObservableField<BaseAdapter> punishAdapter = new ObservableField<>();
         public final ObservableField<BaseAdapter> behaviorAdapter = new ObservableField<>();
         public final ObservableField<BaseAdapter> legalProvisionAdapter = new ObservableField<>();
+
+        public final ObservableBoolean buttonEnabled = new ObservableBoolean();
 
         private String id;
 
@@ -596,36 +684,18 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
             super(owner, binding);
         }
 
-        public void init(String id, int stage, int step) {
+        public void init(String id, int stage, final int step) {
             this.id = id;
 
-            if((stage==3||stage==4) && step==1) {
-                if(stage==4){
-                    NetworkAccessKit.getData(context, ApiKit.URL_ARTICLE(ApiKit.ArticleCategory.ILLEGAL_BEHAVIOR), new NetworkAccessKit.DefaultCallback<JSONArray>() {
+            buttonEnabled.set(true);
 
-                        @Override
-                        public void onSuccess(JSONArray data) {
-                            List<String> items = new LinkedList<String>();
-
-                            for (int i = 0; i < data.length(); i++) {
-                                try {
-                                    JSONObject jobj = data.getJSONObject(i);
-                                    items.add(jobj.getString("title"));
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                            }
-
-                            behaviorAdapter.set(new ArrayAdapter<String>(context, R.layout.simple_spinner_item_1, items));
-                        }
-                    });
-                }
-
+            if(stage==3 && step==1) {
                 NetworkAccessKit.getData(context, ApiKit.URL_ARTICLE(ApiKit.ArticleCategory.PUNISH), new NetworkAccessKit.DefaultCallback<JSONArray>() {
 
                     @Override
                     public void onSuccess(JSONArray data) {
                         List<String> items = new LinkedList<String>();
+                        items.add("请选择");
 
                         for (int i = 0; i < data.length(); i++) {
                             try {
@@ -640,24 +710,17 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
                     }
                 });
 
-                NetworkAccessKit.getData(context, ApiKit.URL_ARTICLE(ApiKit.ArticleCategory.LEGAL_PROVISION), new NetworkAccessKit.DefaultCallback<JSONArray>() {
+                List<String> items = new LinkedList<String>();
+                legalProvisionAdapter.set(new ArrayAdapter<String>(context, R.layout.simple_spinner_item_1, items));
+            }else if(stage==4 && step==1){
+                List<String> items = new LinkedList<String>();
+                behaviorAdapter.set(new ArrayAdapter<String>(context, R.layout.simple_spinner_item_1, items));
 
-                    @Override
-                    public void onSuccess(JSONArray data) {
-                        List<String> items = new LinkedList<String>();
+                items = new LinkedList<>();
+                punishAdapter.set(new ArrayAdapter<String>(context, R.layout.simple_spinner_item_1, items));
 
-                        for (int i = 0; i < data.length(); i++) {
-                            try {
-                                JSONObject jobj = data.getJSONObject(i);
-                                items.add(jobj.getString("title"));
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-
-                        legalProvisionAdapter.set(new ArrayAdapter<String>(context, R.layout.simple_spinner_item_1, items));
-                    }
-                });
+                items = new LinkedList<>();
+                legalProvisionAdapter.set(new ArrayAdapter<String>(context, R.layout.simple_spinner_item_1, items));
             }
 
             NetworkAccessKit.getData(context, ApiKit.URL_LEGAL_CASE_DETAIL(id), new NetworkAccessKit.DefaultCallback<JSONObject>() {
@@ -668,33 +731,58 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
                     address.set(data.optString("address"));
                     corporation.set(data.optString("caseLegalAgent"));
                     phone.set(data.optString("phoneNumber"));
-                    description.set(data.optString("caseDescription"));
+                    description.set(MessageFormat.format("{0} 违反了 {1} \r\n{2}",
+                            data.optString("normCaseDescPart1"),
+                            data.optString("normCaseDescPart2"),
+                            data.optString("caseDescription")));
                     members.set(data.optString("assigneeNames"));
                     serial.set(data.optString("caseDocNo"));
 
                     switch (data.optString("caseStage")) {
                         case "1":
-                            departmentOpinion.set(data.optString("institutionRegOption"));
-                            branchOpioion.set(data.optString("deptLeaderRegOption"));
-                            primaryOpinion.set(data.optString("mainLeaderRegOption"));
+                            departmentOpinion2.set(data.optString("institutionRegOption"));
+                            branchOpioion2.set(data.optString("deptLeaderRegOption"));
+                            primaryOpinion2.set(data.optString("mainLeaderRegOption"));
 
                             memberOpinion.set("");
                             centerOpinion.set("");
                             break;
                         case "3":
-                            memberOpinion.set(data.optString("assigneePenalOption"));
-                            departmentOpinion.set(data.optString("institutionPenalOption"));
-                            branchOpioion.set(data.optString("deptLeaderPenalOption"));
-                            primaryOpinion.set(data.optString("mainLeaderPenalOption"));
-                            centerOpinion.set(data.optString("caseMgtCenterPenalOption"));
+                            departmentOpinion2.set(data.optString("institutionPenalOption"));
+                            branchOpioion2.set(data.optString("deptLeaderPenalOption"));
+                            primaryOpinion2.set(data.optString("mainLeaderPenalOption"));
+                            centerOpinion2.set(data.optString("caseMgtCenterPenalOption"));
+
+                            if(step==1){
+                                ((ArrayAdapter<String>)legalProvisionAdapter.get()).add(data.optString("normCaseDescPart2"));
+                                memberOpinion2.set("");
+                            }else{
+                                memberOpinion2.set(MessageFormat.format("依据 {0} 给予 {1} 之处罚\r\n{2}",
+                                        data.optString("normCaseDescPart2"),
+                                        data.optString("normAssigneePenalOptPart2"),
+                                        data.optString("assigneePenalOption")));
+                            }
                             break;
                         case "4":
-                            memberOpinion.set(data.optString("assigneeCloseCaseOption"));
-                            departmentOpinion.set(data.optString("institutionCloseCaseOption"));
-                            primaryOpinion.set(data.optString("mainLeaderCloseCaseOption"));
-                            centerOpinion.set(data.optString("caseMgtCenterCloseCaseOption"));
+                            departmentOpinion2.set(data.optString("institutionCloseCaseOption"));
+                            primaryOpinion2.set(data.optString("mainLeaderCloseCaseOption"));
+                            centerOpinion2.set(data.optString("caseMgtCenterCloseCaseOption"));
 
                             branchOpioion.set("");
+
+                            if(step==1){
+                                ((ArrayAdapter<String>)behaviorAdapter.get()).add(data.optString("normCaseDescPart1"));
+                                ((ArrayAdapter<String>)legalProvisionAdapter.get()).add(data.optString("normCaseDescPart2"));
+                                ((ArrayAdapter<String>)punishAdapter.get()).add(data.optString("normAssigneePenalOptPart2"));
+
+                                memberOpinion2.set("");
+                            }else{
+                                memberOpinion2.set(MessageFormat.format("{0} 依据 {1} 给予 {2} 之处罚\r\n{3}",
+                                        data.optString("normCaseDescPart1"),
+                                        data.optString("normCaseDescPart2"),
+                                        data.optString("normAssigneePenalOptPart2"),
+                                        data.optString("assigneeCloseCaseOption")));
+                            }
                             break;
                         default:
                             break;
@@ -708,7 +796,23 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
             ActivityLegalCaseApproveBinding binging = DataBindingUtil.getBinding(pview);
 
             int stage = binging.getStage();
-            int progress = binging.getStep();
+            int step = binging.getStep();
+
+            if(step==2 && TextUtils.isEmpty(departmentOpinion.get().trim())) {
+                DialogKit.showMessage(context, "请输入审批意见。");
+                return;
+            }else if(step==3 && TextUtils.isEmpty(centerOpinion.get().trim())) {
+                DialogKit.showMessage(context, "请输入审批意见。");
+                return;
+            }else if(step==4 && TextUtils.isEmpty(branchOpioion.get().trim())) {
+                DialogKit.showMessage(context, "请输入审批意见。");
+                return;
+            }else if(step==5 && TextUtils.isEmpty(primaryOpinion.get().trim())) {
+                DialogKit.showMessage(context, "请输入审批意见。");
+                return;
+            }
+
+            buttonEnabled.set(false);
 
             Map<String , Object> userMap = new HashMap<>();
             userMap.put("id", UserData.getInstance().getId());
@@ -717,24 +821,24 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
             Map<String, Object> legalCaseMap = new HashMap<>();
             legalCaseMap.put("id", id);
             legalCaseMap.put("approve", "reject");
-            legalCaseMap.put("step", MessageFormat.format("{0},{1}", stage, progress));
+            legalCaseMap.put("step", MessageFormat.format("{0},{1}", stage, step));
 
-            if(stage==3 && progress==1){
+            if(stage==3 && step==1){
                 legalCaseMap.put("opinion",memberOpinion.get());
                 legalCaseMap.put("provision",binging.legalProvisionSpinner.getSelectedItem().toString());
                 legalCaseMap.put("punish",binging.punishSpinner.getSelectedItem().toString());
-            }else if(stage==4 && progress==1){
+            }else if(stage==4 && step==1){
                 legalCaseMap.put("opinion",memberOpinion.get());
                 legalCaseMap.put("behavior",binging.behaviorSpinner.getSelectedItem().toString());
                 legalCaseMap.put("provision",binging.legalProvisionSpinner2.getSelectedItem().toString());
                 legalCaseMap.put("punish",binging.punishSpinner2.getSelectedItem().toString());
-            }else if(progress==2){
+            }else if(step==2){
                 legalCaseMap.put("opinion", departmentOpinion.get());
-            }else if(progress==3){
+            }else if(step==3){
                 legalCaseMap.put("opinion", centerOpinion.get());
-            }else if(progress==4){
+            }else if(step==4){
                 legalCaseMap.put("opinion", branchOpioion.get());
-            }else if(progress==5){
+            }else if(step==5){
                 legalCaseMap.put("opinion", primaryOpinion.get());
             }
 
@@ -751,7 +855,11 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
                 @Override
                 public void onSuccess(JSONObject data) {
                     Toast.makeText(view.getContext(), "案件审批成功。", Toast.LENGTH_LONG).show();
-                    ((Activity) view.getRootView().getContext()).finish();
+
+                    Intent intent = new Intent();
+                    intent.putExtra("id", id);
+                    owner.setResult(Activity.RESULT_OK, intent);
+                    owner.finish();
                 }
 
                 @Override
@@ -781,7 +889,33 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
             ActivityLegalCaseApproveBinding binging = DataBindingUtil.getBinding(pview);
 
             int stage = binging.getStage();
-            int progress = binging.getStep();
+            int step = binging.getStep();
+
+            if(step==1) {
+                if (stage == 3 && "请选择".equals(binging.punishSpinner.getSelectedItem().toString())) {
+                    DialogKit.showMessage(context, "请选择处罚类型。");
+                    return;
+                }
+
+                if (TextUtils.isEmpty(memberOpinion.get().trim())) {
+                    DialogKit.showMessage(context, "请输入审批意见。");
+                    return;
+                }
+            }else if(step==2 && TextUtils.isEmpty(departmentOpinion.get().trim())) {
+                DialogKit.showMessage(context, "请输入审批意见。");
+                return;
+            }else if(step==3 && TextUtils.isEmpty(centerOpinion.get().trim())) {
+                DialogKit.showMessage(context, "请输入审批意见。");
+                return;
+            }else if(step==4 && TextUtils.isEmpty(branchOpioion.get().trim())) {
+                DialogKit.showMessage(context, "请输入审批意见。");
+                return;
+            }else if(step==5 && TextUtils.isEmpty(primaryOpinion.get().trim())) {
+                DialogKit.showMessage(context, "请输入审批意见。");
+                return;
+            }
+
+            buttonEnabled.set(false);
 
             Map<String , Object> userMap = new HashMap<>();
             userMap.put("id", UserData.getInstance().getId());
@@ -790,24 +924,24 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
             Map<String, Object> legalCaseMap = new HashMap<>();
             legalCaseMap.put("id", id);
             legalCaseMap.put("approve", "pass");
-            legalCaseMap.put("step", MessageFormat.format("{0},{1}", stage, progress));
+            legalCaseMap.put("step", MessageFormat.format("{0},{1}", stage, step));
 
-            if(stage==3 && progress==1){
+            if(stage==3 && step==1){
                 legalCaseMap.put("opinion",memberOpinion.get());
                 legalCaseMap.put("provision",binging.legalProvisionSpinner.getSelectedItem().toString());
                 legalCaseMap.put("punish",binging.punishSpinner.getSelectedItem().toString());
-            }else if(stage==4 && progress==1){
+            }else if(stage==4 && step==1){
                 legalCaseMap.put("opinion",memberOpinion.get());
                 legalCaseMap.put("behavior",binging.behaviorSpinner.getSelectedItem().toString());
                 legalCaseMap.put("provision",binging.legalProvisionSpinner2.getSelectedItem().toString());
                 legalCaseMap.put("punish",binging.punishSpinner2.getSelectedItem().toString());
-            }else if(progress==2){
+            }else if(step==2){
                 legalCaseMap.put("opinion", departmentOpinion.get());
-            }else if(progress==3){
+            }else if(step==3){
                 legalCaseMap.put("opinion", centerOpinion.get());
-            }else if(progress==4){
+            }else if(step==4){
                 legalCaseMap.put("opinion", branchOpioion.get());
-            }else if(progress==5){
+            }else if(step==5){
                 legalCaseMap.put("opinion", primaryOpinion.get());
             }
 
@@ -824,7 +958,11 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
                 @Override
                 public void onSuccess(JSONObject data) {
                     Toast.makeText(view.getContext(), "案件审批成功。", Toast.LENGTH_LONG).show();
-                    ((Activity) view.getRootView().getContext()).finish();
+
+                    Intent intent = new Intent();
+                    intent.putExtra("id", id);
+                    owner.setResult(Activity.RESULT_OK, intent);
+                    owner.finish();
                 }
 
                 @Override
@@ -863,6 +1001,8 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
         public final ObservableField<SimpleRecycleViewAdapter> pictureAdapter = new ObservableField<>();
         public final ObservableField<SimpleRecycleViewAdapter> videoAdapter = new ObservableField<>();
 
+        public final ObservableBoolean buttonEnabled = new ObservableBoolean();
+
         private String id;
 
         public FileViewModel(Activity owner, ActivityLegalCaseFileBinding binding) {
@@ -871,6 +1011,8 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
 
         public void init(String id) {
             this.id = id;
+
+            buttonEnabled.set(true);
 
             binding.documentRecyclerView.setLayoutManager(new GridLayoutManager(context, 4));
             binding.pictureRecyclerView.setLayoutManager(new GridLayoutManager(context, 4));
@@ -981,8 +1123,7 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
         }
 
         public void onSubmitClicked(final View view) {
-            view.setBackgroundResource(R.drawable.bg_button_disabled);
-            ((Button)view).setEnabled(false);
+            buttonEnabled.set(false);
 
             //获取待上传的文件列表
             List<Map<String, Object>> fileList = new LinkedList<>();
@@ -1029,10 +1170,12 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
             postFiles(fileList);
         }
 
-        public void onFinishedClicked(View view){
+        public void onFinishedClicked(final View view){
             new AlertDialog.Builder(context).setTitle("提示").setMessage("确认完成案件调查，进入下一个流程吗？").setPositiveButton("确定", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
+                    buttonEnabled.set(false);
+
                     try{
                         JSONObject jsonUser = new JSONObject();
                         jsonUser.put("id", UserData.getInstance().getId());
@@ -1050,7 +1193,11 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
                             @Override
                             public void onSuccess(JSONObject data) {
                                 Toast.makeText(context, "调查完成，进入下一流程。", Toast.LENGTH_LONG).show();
-                                ((Activity)context).finish();
+
+                                Intent intent = new Intent();
+                                intent.putExtra("id", id);
+                                owner.setResult(Activity.RESULT_OK, intent);
+                                owner.finish();
                             }
                         });
                     }catch (Exception e){
@@ -1187,7 +1334,9 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
                     @Override
                     public void onSuccess(Object data) {
                         Toast.makeText(context, "文件更新成功。", Toast.LENGTH_LONG).show();
-                        ((Activity) context).finish();
+
+                        owner.setResult(Activity.RESULT_CANCELED);
+                        owner.finish();
                     }
                 });
             } catch (Exception e) {

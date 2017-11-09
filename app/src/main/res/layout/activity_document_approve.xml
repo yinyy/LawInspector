@@ -9,7 +9,10 @@
 
         <variable
             name="viewModel"
-            type="kl.law.inspector.vm.DocumentViewModel.DetailViewModel" />
+            type="kl.law.inspector.vm.DocumentViewModel.ApproveViewModel" />
+        <variable
+            name="progressCode"
+            type="java.lang.Integer"/>
     </data>
 
     <ScrollView style="@style/MyApp.ViewContainer">
@@ -48,7 +51,7 @@
                 style="@style/MyApp.ContentLine"
                 android:layout_marginTop="12dp"
                 android:orientation="vertical"
-                android:visibility="@{viewModel.progressCode==1?View.VISIBLE:View.GONE}">
+                android:visibility="@{progressCode==1?View.VISIBLE:View.GONE}">
 
                 <TextView
                     style="@style/MyApp.Label"
@@ -66,7 +69,7 @@
                 style="@style/MyApp.ContentLine"
                 android:layout_marginTop="12dp"
                 android:orientation="vertical"
-                android:visibility="@{viewModel.progressCode==2?View.VISIBLE:View.GONE}">
+                android:visibility="@{progressCode==2?View.VISIBLE:View.GONE}">
 
                 <TextView
                     style="@style/MyApp.Label"
@@ -85,7 +88,7 @@
             <LinearLayout
                 style="@style/MyApp.ContentLine"
                 android:layout_marginTop="12dp"
-                android:visibility="@{viewModel.progressCode==3 || viewModel.progressCode==4?View.VISIBLE:View.GONE}">
+                android:visibility="@{progressCode==3 || progressCode==4?View.VISIBLE:View.GONE}">
 
                 <TextView
                     style="@style/MyApp.Label"
@@ -99,7 +102,7 @@
                 style="@style/MyApp.ContentLine"
                 android:layout_marginTop="12dp"
                 android:orientation="vertical"
-                android:visibility="@{viewModel.progressCode==3?View.VISIBLE:View.GONE}">
+                android:visibility="@{progressCode==3?View.VISIBLE:View.GONE}">
 
                 <TextView
                     style="@style/MyApp.Label"
@@ -116,34 +119,46 @@
             <LinearLayout
                 style="@style/MyApp.ContentLine"
                 android:layout_marginTop="12dp"
-                android:visibility="@{viewModel.progressCode==1||viewModel.progressCode==3?View.VISIBLE:View.GONE}">
+                android:visibility="@{progressCode==1?View.VISIBLE:View.GONE}">
                 <Button
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="发送"
-                    android:onClick="@{viewModel.onSubmitClicked}"
+                    android:text="报送领导批示"
+                    android:onClick="@{viewModel.onSendToLeaderClicked}"
                     style="@style/MyApp.BlueButton"/>
             </LinearLayout>
             <LinearLayout
                 style="@style/MyApp.ContentLine"
                 android:layout_marginTop="12dp"
-                android:visibility="@{viewModel.progressCode==2?View.VISIBLE:View.GONE}">
+                android:visibility="@{progressCode==2?View.VISIBLE:View.GONE}">
                 <Button
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="完成"
-                    android:onClick="@{viewModel.onSubmitClicked}"
+                    android:onClick="@{viewModel.onLeaderFinishClicked}"
                     style="@style/MyApp.BlueButton"/>
             </LinearLayout>
             <LinearLayout
                 style="@style/MyApp.ContentLine"
                 android:layout_marginTop="12dp"
-                android:visibility="@{viewModel.progressCode==4?View.VISIBLE:View.GONE}">
+                android:visibility="@{progressCode==3?View.VISIBLE:View.GONE}">
+                <Button
+                    android:id="@+id/send_doc_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="公文归档"
+                    android:onClick="@{viewModel.onSendToAllClicked}"
+                    style="@style/MyApp.BlueButton"/>
+            </LinearLayout>
+            <LinearLayout
+                style="@style/MyApp.ContentLine"
+                android:layout_marginTop="12dp"
+                android:visibility="@{progressCode==4?View.VISIBLE:View.GONE}">
                 <Button
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="已阅读"
-                    android:onClick="@{viewModel.onSubmitClicked}"
+                    android:onClick="@{viewModel.onReadClicked}"
                     style="@style/MyApp.BlueButton"/>
             </LinearLayout>
         </LinearLayout>

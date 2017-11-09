@@ -68,20 +68,18 @@
                     android:layout_height="wrap_content"
                     android:layout_margin="8dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_button_decline"
                     android:onClick="@{viewModel.onProgressClicked}"
                     android:text="进度查询"
-                    android:textColor="@color/colorNormalButtonText"/>
+                    style="@style/MyApp.GreenButton"/>
 
                 <Button
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_margin="8dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_button_normal"
                     android:onClick="@{viewModel.onFileClicked}"
                     android:text="文件查询"
-                    android:textColor="@color/colorNormalButtonText" />
+                    style="@style/MyApp.BlueButton"/>
             </LinearLayout>
 
         </LinearLayout>

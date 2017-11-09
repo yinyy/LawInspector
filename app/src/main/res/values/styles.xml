@@ -59,4 +59,18 @@
     </style>
 
 
+    <style name="MyApp.BlueButton" parent="MyApp">
+        <item name="android:background">@drawable/button_blue</item>
+        <item name="android:textColor">@drawable/button_text</item>
+    </style>
+
+    <style name="MyApp.RedButton" parent="MyApp">
+        <item name="android:background">@drawable/button_red</item>
+        <item name="android:textColor">@drawable/button_text</item>
+    </style>
+
+    <style name="MyApp.GreenButton" parent="MyApp">
+        <item name="android:background">@drawable/button_green</item>
+        <item name="android:textColor">@drawable/button_text</item>
+    </style>
 </resources>
