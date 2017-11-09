@@ -141,7 +141,8 @@
         </receiver>
 
         <activity android:name=".activity.LegalCaseStatisticsActivity" />
-        <activity android:name=".activity.DocumentApproveActivity"></activity>
+        <activity android:name=".activity.DocumentApproveActivity" />
+        <activity android:name=".activity.ImageBrowserActivity" android:theme="@style/MyApp.FullScreen"></activity>
     </application>
 
 </manifest>

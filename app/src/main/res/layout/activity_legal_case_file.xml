@@ -11,47 +11,47 @@
 
     <ScrollView style="@style/MyApp.ViewContainer">
         <LinearLayout style="@style/MyApp.ChildViewContainer">
-            <LinearLayout style="@style/MyApp.ContentLine" android:visibility="gone">
-                <TextView style="@style/MyApp.Label"
-                    android:text="当事人："/>
-                <TextView style="@style/MyApp.Content"
-                    android:text="@{viewModel.party}"/>
-            </LinearLayout>
+            <!--<LinearLayout style="@style/MyApp.ContentLine" android:visibility="gone">-->
+                <!--<TextView style="@style/MyApp.Label"-->
+                    <!--android:text="当事人："/>-->
+                <!--<TextView style="@style/MyApp.Content"-->
+                    <!--android:text="@{viewModel.party}"/>-->
+            <!--</LinearLayout>-->
 
-            <LinearLayout style="@style/MyApp.ContentLine" android:visibility="gone">
-                <TextView style="@style/MyApp.Label"
-                    android:text="地址："/>
-                <TextView style="@style/MyApp.Content"
-                    android:text="@{viewModel.address}"/>
-            </LinearLayout>
+            <!--<LinearLayout style="@style/MyApp.ContentLine" android:visibility="gone">-->
+                <!--<TextView style="@style/MyApp.Label"-->
+                    <!--android:text="地址："/>-->
+                <!--<TextView style="@style/MyApp.Content"-->
+                    <!--android:text="@{viewModel.address}"/>-->
+            <!--</LinearLayout>-->
 
-            <LinearLayout style="@style/MyApp.ContentLine" android:visibility="gone">
-                <TextView style="@style/MyApp.Label"
-                    android:text="法人："/>
-                <TextView style="@style/MyApp.Content"
-                    android:text="@{viewModel.corporation}"/>
-            </LinearLayout>
+            <!--<LinearLayout style="@style/MyApp.ContentLine" android:visibility="gone">-->
+                <!--<TextView style="@style/MyApp.Label"-->
+                    <!--android:text="法人："/>-->
+                <!--<TextView style="@style/MyApp.Content"-->
+                    <!--android:text="@{viewModel.corporation}"/>-->
+            <!--</LinearLayout>-->
 
-            <LinearLayout style="@style/MyApp.ContentLine" android:visibility="gone">
-                <TextView style="@style/MyApp.Label"
-                    android:text="联系电话："/>
-                <TextView style="@style/MyApp.Content"
-                    android:text="@{viewModel.phone}"/>
-            </LinearLayout>
+            <!--<LinearLayout style="@style/MyApp.ContentLine" android:visibility="gone">-->
+                <!--<TextView style="@style/MyApp.Label"-->
+                    <!--android:text="联系电话："/>-->
+                <!--<TextView style="@style/MyApp.Content"-->
+                    <!--android:text="@{viewModel.phone}"/>-->
+            <!--</LinearLayout>-->
 
-            <LinearLayout style="@style/MyApp.ContentLine" android:visibility="gone">
-                <TextView style="@style/MyApp.Label"
-                    android:text="案情简述："/>
-                <TextView style="@style/MyApp.Content"
-                    android:text="@{viewModel.description}"/>
-            </LinearLayout>
+            <!--<LinearLayout style="@style/MyApp.ContentLine" android:visibility="gone">-->
+                <!--<TextView style="@style/MyApp.Label"-->
+                    <!--android:text="案情简述："/>-->
+                <!--<TextView style="@style/MyApp.Content"-->
+                    <!--android:text="@{viewModel.description}"/>-->
+            <!--</LinearLayout>-->
 
-            <LinearLayout style="@style/MyApp.ContentLine" android:visibility="gone">
-                <TextView style="@style/MyApp.Label"
-                    android:text="承办人："/>
-                <TextView style="@style/MyApp.Content"
-                    android:text="@{viewModel.members}"/>
-            </LinearLayout>
+            <!--<LinearLayout style="@style/MyApp.ContentLine" android:visibility="gone">-->
+                <!--<TextView style="@style/MyApp.Label"-->
+                    <!--android:text="承办人："/>-->
+                <!--<TextView style="@style/MyApp.Content"-->
+                    <!--android:text="@{viewModel.members}"/>-->
+            <!--</LinearLayout>-->
 
             <LinearLayout style="@style/MyApp.ContentLine"
                 android:orientation="vertical">

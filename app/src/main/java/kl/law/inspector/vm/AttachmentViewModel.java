@@ -13,12 +13,13 @@ import android.databinding.ObservableLong;
 import android.provider.MediaStore;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
-import android.widget.Toast;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import kl.law.inspector.R;
+import kl.law.inspector.activity.ImageBrowserActivity;
 import kl.law.inspector.tools.SimpleRecycleViewAdapter;
 
 /**
@@ -99,7 +100,27 @@ public class AttachmentViewModel {
     }
 
     public void onPreviewClicked(View view){
-        Toast.makeText(context, "预览选中的文件。", Toast.LENGTH_SHORT).show();
+        RecyclerView recyclerView = (RecyclerView) view.getParent().getParent();
+        SimpleRecycleViewAdapter<AttachmentViewModel> adapter = (SimpleRecycleViewAdapter<AttachmentViewModel>) recyclerView.getAdapter();
+        List<AttachmentViewModel> datas = adapter.getData();
+
+        ArrayList<String> files = new ArrayList<>();
+        for(AttachmentViewModel attachmentViewModel : datas){
+            if(attachmentViewModel.type.get()==AttachmentViewModel.TYPE_ADD_BUTTON){
+                continue;
+            }
+
+            if(attachmentViewModel.localFile.get()==null){
+                files.add(attachmentViewModel.remoteUrl.get());
+            }else{
+                files.add(attachmentViewModel.localFile.get().getAbsolutePath());
+            }
+        }
+
+        Intent intent = new Intent(context, ImageBrowserActivity.class);
+        intent.putStringArrayListExtra("files", files);
+        intent.putExtra("position", recyclerView.getChildLayoutPosition((View)view.getParent()));
+        context.startActivity(intent);
     }
 
     public void onRemoveClicked(final View view){

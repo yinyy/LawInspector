@@ -989,12 +989,12 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
     }
 
     public static class FileViewModel extends AbstractViewModel<Activity, ActivityLegalCaseFileBinding>{
-        public final ObservableField<String> party = new ObservableField<>();
-        public final ObservableField<String> address = new ObservableField<>();
-        public final ObservableField<String> corporation = new ObservableField<>();
-        public final ObservableField<String> phone = new ObservableField<>();
-        public final ObservableField<String> description = new ObservableField<>();
-        public final ObservableField<String> members = new ObservableField<>();
+//        public final ObservableField<String> party = new ObservableField<>();
+//        public final ObservableField<String> address = new ObservableField<>();
+//        public final ObservableField<String> corporation = new ObservableField<>();
+//        public final ObservableField<String> phone = new ObservableField<>();
+//        public final ObservableField<String> description = new ObservableField<>();
+//        public final ObservableField<String> members = new ObservableField<>();
         public final ObservableBoolean showFinishedButton = new ObservableBoolean();
 
         public final ObservableField<SimpleRecycleViewAdapter> documentAdapter = new ObservableField<>();
