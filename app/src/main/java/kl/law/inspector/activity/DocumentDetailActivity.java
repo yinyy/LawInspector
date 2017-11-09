@@ -1,7 +1,5 @@
 package kl.law.inspector.activity;
 
-import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.databinding.DataBindingUtil;
 import android.os.Bundle;
@@ -24,8 +22,6 @@ public class DocumentDetailActivity extends AppCompatActivity {
 
         ActivityDocumentDetailBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_document_detail);
         binding.fileRecyclerView.setLayoutManager(new GridLayoutManager(this, 4));
-        binding.approverRecyclerView.setLayoutManager(new GridLayoutManager(this, 5));
-        binding.readerRecyclerView.setLayoutManager(new GridLayoutManager(this, 5));
 
         DocumentViewModel.DetailViewModel viewModel = new DocumentViewModel.DetailViewModel(this, binding);
         viewModel.init(id, progressCode);
@@ -39,12 +35,7 @@ public class DocumentDetailActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-                new AlertDialog.Builder(this).setTitle("提示").setMessage("是否放弃本次公文的录入？").setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        finish();
-                    }
-                }).setNegativeButton("取消", null).show();
+                finish();
                 break;
         }
         return super.onOptionsItemSelected(item);

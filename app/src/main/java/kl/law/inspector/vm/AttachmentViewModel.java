@@ -2,17 +2,22 @@ package kl.law.inspector.vm;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.DownloadManager;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.databinding.DataBindingUtil;
 import android.databinding.ObservableBoolean;
 import android.databinding.ObservableField;
 import android.databinding.ObservableInt;
 import android.databinding.ObservableLong;
+import android.net.Uri;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
+import android.widget.Toast;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -20,6 +25,8 @@ import java.util.List;
 
 import kl.law.inspector.R;
 import kl.law.inspector.activity.ImageBrowserActivity;
+import kl.law.inspector.databinding.ItemAttachmentBinding;
+import kl.law.inspector.tools.FileKit;
 import kl.law.inspector.tools.SimpleRecycleViewAdapter;
 
 /**
@@ -104,16 +111,54 @@ public class AttachmentViewModel {
         SimpleRecycleViewAdapter<AttachmentViewModel> adapter = (SimpleRecycleViewAdapter<AttachmentViewModel>) recyclerView.getAdapter();
         List<AttachmentViewModel> datas = adapter.getData();
 
+        ItemAttachmentBinding binding = DataBindingUtil.getBinding((View) view.getParent());
+        AttachmentViewModel viewModel = binding.getViewModel();
+        final String name1;
+        if(viewModel.localFile.get()==null){
+            name1 = viewModel.remoteUrl.get();
+            if(!FileKit.isBitmap(name1)){
+                new AlertDialog.Builder(context).setTitle("提示").setMessage("网络非图片文件，无法直接预览。是否下载查看？").setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        final DownloadManager downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+                        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(name1/*.replace("192.168.100.110:9090", "10.0.2.2:8080")*/));
+                        request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_MOBILE | DownloadManager.Request.NETWORK_WIFI);
+                        request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name1.substring(name1.lastIndexOf("/")+1));
+                        request.setVisibleInDownloadsUi(true);//在通知栏显示
+                        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                        request.allowScanningByMediaScanner();//允许被扫描
+                        request.setVisibleInDownloadsUi(true);//通知栏一直显示
+                        request.setTitle("文件下载");
+                        downloadManager.enqueue(request);//得到下载文件的唯一id
+                    }
+                }).setNegativeButton("取消", null).show();
+
+                return;
+            }
+        }else{
+            name1 = viewModel.localFile.get().getAbsolutePath();
+            if(!FileKit.isBitmap(name1)){
+                Toast.makeText(context, "本地非图片文件，可直接查看。", Toast.LENGTH_LONG).show();
+
+                return;
+            }
+        }
+
         ArrayList<String> files = new ArrayList<>();
         for(AttachmentViewModel attachmentViewModel : datas){
             if(attachmentViewModel.type.get()==AttachmentViewModel.TYPE_ADD_BUTTON){
                 continue;
             }
 
+            String name;
             if(attachmentViewModel.localFile.get()==null){
-                files.add(attachmentViewModel.remoteUrl.get());
+                name = attachmentViewModel.remoteUrl.get();
             }else{
-                files.add(attachmentViewModel.localFile.get().getAbsolutePath());
+                name = attachmentViewModel.localFile.get().getAbsolutePath();
+            }
+
+            if(FileKit.isBitmap(name)) {
+                files.add(name);
             }
         }
 

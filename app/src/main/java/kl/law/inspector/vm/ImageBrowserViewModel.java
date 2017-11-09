@@ -49,7 +49,7 @@ public class ImageBrowserViewModel extends AbstractViewModel<Activity, ActivityI
             public Object instantiateItem(ViewGroup container, int position) {
                 PhotoView view = views.get(position);
                 container.addView(view);
-                CustomDatabindingProperty.loadImage(view, files.get(position).replace("192.168.100.110:9090", "10.0.2.2:8080"));
+                CustomDatabindingProperty.loadImage(view, files.get(position)/*.replace("192.168.100.110:9090", "10.0.2.2:8080")*/);
 
                 return views.get(position);
             }

@@ -41,7 +41,6 @@ public class ApiKit {
     public static String URL_USER_LIST = MessageFormat.format("{0}/apiv1/user/info/list", API_URL_PREFIX);
     public static String URL_LEGAL_CASE_CREATE = MessageFormat.format("{0}/apiv1/oa/case/create", API_URL_PREFIX);
     public static String URL_LEGAL_CASE_APPROVE = MessageFormat.format("{0}/apiv1/oa/case/approve", API_URL_PREFIX);
-    public static String URL_LEGAL_CASE_FILE_FINISHED = MessageFormat.format("{0}/apiv1/oa/case/filefinished", API_URL_PREFIX);
     public static String URL_LEGAL_CASE_UPDATE_FILES = MessageFormat.format("{0}/apiv1/oa/case/updatefiles", API_URL_PREFIX);
     public static String URL_DOCUMENT_CREATE = MessageFormat.format("{0}/apiv1/oa/doc/create", API_URL_PREFIX);
     public static String URL_DOCUMENT_APPROVE = MessageFormat.format("{0}/apiv1/oa/doc/approve", API_URL_PREFIX);
@@ -59,19 +58,11 @@ public class ApiKit {
         return MessageFormat.format("{0}/apiv1/user/info/list?office_id={1}", API_URL_PREFIX, officeId);
     }
 
-    public static String URL_USER(String officeId, String subOfficeName) {
-        return MessageFormat.format("{0}/apiv1/user/info/list?office_id={1}&child_office_name={2}", API_URL_PREFIX, officeId, subOfficeName);
-    }
-
     public static String URL_LEGAL_CASE_LIST(int page, int stage, String user_id) {
         return MessageFormat.format("{0}/apiv1/oa/case/list?page={1}&stage={2}&user_id={3}", API_URL_PREFIX, page, stage, user_id);
     }
 
     public static String URL_LEGAL_CASE_TODO_LIST(String user_id) {
-        return MessageFormat.format("{0}/apiv1/oa/case/todolist?user_id={1}", API_URL_PREFIX, user_id);
-    }
-
-    public static String URL_REMINDER_TODO_LIST(String user_id) {
         return MessageFormat.format("{0}/apiv1/oa/case/todolist?user_id={1}", API_URL_PREFIX, user_id);
     }
 
@@ -93,10 +84,6 @@ public class ApiKit {
 
     public static String URL_DOCUMENT_LIST(int page, String user_id) {
         return MessageFormat.format("{0}/apiv1/oa/doc/list?page={1}&user_id={2}", API_URL_PREFIX, page, user_id);
-    }
-
-    public static String URL_DOCUMENT_FILE_LIST(String documentId) {
-        return MessageFormat.format("{0}/apiv1/oa/document/getfile?id={1}", API_URL_PREFIX, documentId);
     }
 
     public static String URL_DOCUMENT_DETAIL(String documentId) {
