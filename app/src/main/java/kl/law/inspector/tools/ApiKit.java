@@ -3,7 +3,7 @@ package kl.law.inspector.tools;
 import java.net.URLEncoder;
 import java.text.MessageFormat;
 
-/**
+/**j
  * Created by yinyy on 2017/8/17.
  */
 
@@ -11,8 +11,8 @@ public class ApiKit {
     //private static final String API_URL_PREFIX = "http://47.93.52.62:8080/klzf2";
     //private static final String API_URL_PREFIX = "http://192.168.31.205:8080/day5";
     //private static final String API_URL_PREFIX = "http://10.0.2.2:8080/law2";
-    private static final String API_URL_PREFIX = "http://10.0.2.2:8080/day5";
-    //private static final String API_URL_PREFIX = "http://192.168.100.110:9090/day5";
+    //private static final String API_URL_PREFIX = "http://10.0.2.2:8080/day5";
+    private static final String API_URL_PREFIX = "http://192.168.100.110:9090/day5";
 
     public static final class ArticleCategory {
         /**
@@ -88,6 +88,10 @@ public class ApiKit {
 
     public static String URL_DOCUMENT_DETAIL(String documentId) {
         return MessageFormat.format("{0}/apiv1/oa/doc/get?id={1}", API_URL_PREFIX, documentId);
+    }
+
+    public static String URL_REMINDER_TODO_LIST(String user_id) {
+        return MessageFormat.format("{0}/apiv1/oa/case/planlist?user_id={1}", API_URL_PREFIX, user_id);
     }
 
 

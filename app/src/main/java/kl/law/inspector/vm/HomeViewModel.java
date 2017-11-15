@@ -216,8 +216,8 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
         viewPagerBindings[1].recycleView.setAdapter(adapterDocument);
         viewPagerBindings[1].swipeRefreshLayout.setOnRefreshListener(onRefreshListener[1]);
 
-        List<DocumentViewModel.ItemViewModel> datasReminder = new LinkedList<>();
-        RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel> adapterReminder = new RefreshRecyclerViewAdapter<>(datasReminder, R.layout.item_document, R.layout.item_footer_refresh, BR.viewModel, BR.footer);
+        List<LegalCaseViewModel.ItemViewModel> datasReminder = new LinkedList<>();
+        RefreshRecyclerViewAdapter<LegalCaseViewModel.ItemViewModel> adapterReminder = new RefreshRecyclerViewAdapter<>(datasReminder, R.layout.item_reminder, R.layout.item_footer_refresh, BR.viewModel, BR.footer);
         adapterReminder.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
         viewPagerBindings[2].recycleView.setAdapter(adapterReminder);
         viewPagerBindings[2].swipeRefreshLayout.setOnRefreshListener(onRefreshListener[2]);
@@ -436,35 +436,30 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
 
         scrollRefreshStatusModels[2].setLoading(true);
 
-        final RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel> adapter = (RefreshRecyclerViewAdapter<DocumentViewModel.ItemViewModel>) viewPagerBindings[2].recycleView.getAdapter();
+        final RefreshRecyclerViewAdapter<LegalCaseViewModel.ItemViewModel> adapter = (RefreshRecyclerViewAdapter<LegalCaseViewModel.ItemViewModel>) viewPagerBindings[2].recycleView.getAdapter();
         adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
-        final List<DocumentViewModel.ItemViewModel> datas = adapter.getData();
+        final List<LegalCaseViewModel.ItemViewModel> datas = adapter.getData();
         datas.clear();
         adapter.notifyDataSetChanged();
 
         final ItemToDoBinding todoBinding = DataBindingUtil.getBinding(binding.tabLayout.getTabAt(2).getCustomView());
         final TodoViewModel todoViewModel = todoBinding.getViewModel();
 
-        NetworkAccessKit.getData(context, ApiKit.URL_DOCUMENT_TODO_LIST(UserData.getInstance().getId()), new NetworkAccessKit.DefaultCallback<JSONArray>() {
+        NetworkAccessKit.getData(context, ApiKit.URL_REMINDER_TODO_LIST(UserData.getInstance().getId()), new NetworkAccessKit.DefaultCallback<JSONObject>() {
             @Override
-            public void onSuccess(JSONArray jsonArray) {
-                if(jsonArray!=null) {
-                    //todoViewModel.count.set(jsonArray.length());
-
+            public void onSuccess(JSONObject data) {
+                if(data!=null) {
+                    JSONArray jsonArray = data.optJSONArray("data");
                     for (int i = 0; i < jsonArray.length(); i++) {
-                        try {
-                            JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        JSONObject jsonObject = jsonArray.optJSONObject(i);
+                        LegalCaseViewModel.ItemViewModel vm = new LegalCaseViewModel.ItemViewModel();
+                        vm.setId(jsonObject.optString("id"));
+                        vm.title.set(jsonObject.optString("title"));
+                        vm.remainder.set(jsonObject.optString("planRemark"));
 
-                            DocumentViewModel.ItemViewModel vm = new DocumentViewModel.ItemViewModel();
-                            vm.setId(i + "");
-                            vm.title.set("关于某某事情的决定" + i);
-                            vm.created.set("2017/10/05");
-                            vm.progressCode.set(i);
+                        vm.setClickAction(LegalCaseViewModel.ItemViewModel.CLICK_ACTION_DETAIL);
 
-                            datas.add(vm);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                        datas.add(vm);
                     }
                 }
 
