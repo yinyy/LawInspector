@@ -80,6 +80,14 @@
         <!--<item name="android:windowIsFloating">true</item>-->
     </style>
 
+    <style name="MyApp.DefaultEditText" parent="Theme.AppCompat">
+        <item name="android:background">@drawable/background_edittext</item>
+        <item name="android:textColor">@color/colorNormalTitle</item>
+        <item name="android:textAlignment">center</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:padding">8dp</item>
+    </style>
+
 
 
 

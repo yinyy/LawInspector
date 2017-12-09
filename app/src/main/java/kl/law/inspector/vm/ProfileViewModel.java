@@ -130,8 +130,8 @@ public class ProfileViewModel extends AbstractViewModel<Fragment, FragmentProfil
             }
 
             @Override
-            public void handleFailureAndError() {
-                Toast.makeText(context, "检查版本信息时发生错误，请稍后重试。", Toast.LENGTH_LONG).show();
+            public void handleFailureAndError(String message) {
+                super.handleFailureAndError(message);
             }
         });
     }

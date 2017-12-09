@@ -118,9 +118,11 @@ public class LoginViewModel extends AbstractViewModel<Activity, ActivityLoginBin
             }
 
             @Override
-            public void handleFailureAndError() {
+            public void handleFailureAndError(String message) {
+                super.handleFailureAndError(message);
+
+                Toast.makeText(context, message, Toast.LENGTH_LONG).show();
                 DialogKit.hideLoadingDialog();
-                Toast.makeText(context, "登录时发生错误，请稍后重试。", Toast.LENGTH_LONG).show();
             }
         });
     }

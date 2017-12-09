@@ -33,6 +33,15 @@
                     android:layout_marginTop="8dp"/>
             </LinearLayout>
 
+            <LinearLayout style="@style/MyApp.ContentLine">
+                <TextView style="@style/MyApp.Label"
+                    android:text="备注："/>
+                <EditText style="@style/MyApp.Content"
+                    android:text="@={viewModel.opinion}"
+                    android:hint="请输入备注"
+                    android:lines="3"/>
+            </LinearLayout>
+
             <LinearLayout style="@style/MyApp.ContentLine" android:layout_marginTop="12dp">
                 <Button
                     android:layout_width="match_parent"

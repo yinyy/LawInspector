@@ -47,6 +47,16 @@
                     android:layout_marginTop="8dp"/>
             </LinearLayout>
 
+            <LinearLayout style="@style/MyApp.ContentLine"
+                android:layout_marginTop="12dp">
+                <TextView
+                    style="@style/MyApp.Label"
+                    android:text="备注1：" />
+                <TextView
+                    style="@style/MyApp.Content"
+                    android:text="@{viewModel.opinion1}" />
+            </LinearLayout>
+
             <LinearLayout
                 style="@style/MyApp.ContentLine"
                 android:layout_marginTop="12dp"
@@ -63,6 +73,28 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine"
+                android:layout_marginTop="12dp"
+                android:visibility="@{progressCode==1?View.VISIBLE:View.GONE}">
+                <TextView style="@style/MyApp.Label"
+                    android:text="备注2："/>
+                <EditText style="@style/MyApp.Content"
+                    android:text="@={viewModel.opinion2}"
+                    android:hint="请输入备注"
+                    android:lines="3"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/MyApp.ContentLine"
+                android:layout_marginTop="12dp"
+                android:visibility="@{progressCode==2|| progressCode==3|| progressCode==4?View.VISIBLE:View.GONE}">
+                <TextView
+                    style="@style/MyApp.Label"
+                    android:text="备注2：" />
+                <TextView
+                    style="@style/MyApp.Content"
+                    android:text="@{viewModel.opinion2}" />
             </LinearLayout>
 
             <LinearLayout

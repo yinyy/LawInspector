@@ -10,11 +10,13 @@ import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -165,7 +167,7 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
         binding.tabLayout.setupWithViewPager(binding.viewPager);
 
         int[] icons = {R.drawable.ic_legal_case_green, R.drawable.ic_document_blue, R.drawable.ic_remind_yellow};
-        String[] titles = {"行政执法", "公文流转", "待办提醒"};
+        String[] titles = {"行政执法", "公文流转", "计划任务"};
         for (int index = 0; index < viewPagerBindings.length; index++) {
             ItemToDoBinding todoBinding = DataBindingUtil.inflate(inflater, R.layout.item_to_do, null, false);
             TodoViewModel todoViewModel = new TodoViewModel();
@@ -318,7 +320,7 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
                         vm.progressCode.set(Integer.parseInt(MessageFormat.format("{0}{1}", values[0], values[1])));
 
                         //TODO:剩余天数
-                        vm.remainder.set(MessageFormat.format("{0}{1}", values[0], values[1]));
+                        //vm.remainder.set(MessageFormat.format("{0}{1}", values[0], values[1]));
 
 
                         if(vm.progressCode.get()/10==2){
@@ -332,16 +334,20 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
                 }
 
                 adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
-                adapter.notifyDataSetChanged();
 
                 scrollRefreshStatusModels[0].setLoading(false);
                 viewPagerBindings[0].swipeRefreshLayout.setRefreshing(false);
             }
 
             @Override
-            public void handleFailureAndError() {
-                adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
+            public void handleFailureAndError(String message) {
+                super.handleFailureAndError(message);
 
+                if(!TextUtils.isEmpty(message)) {
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+                }
+
+                adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
                 scrollRefreshStatusModels[0].setLoading(false);
                 viewPagerBindings[0].swipeRefreshLayout.setRefreshing(false);
             }
@@ -416,9 +422,14 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
             }
 
             @Override
-            public void handleFailureAndError() {
-                adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
+            public void handleFailureAndError(String message) {
+                super.handleFailureAndError(message);
 
+                if(!TextUtils.isEmpty(message)) {
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+                }
+
+                adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
                 scrollRefreshStatusModels[1].setLoading(false);
                 viewPagerBindings[1].swipeRefreshLayout.setRefreshing(false);
             }
@@ -471,9 +482,14 @@ public class HomeViewModel extends AbstractViewModel<Fragment, FragmentHomeBindi
             }
 
             @Override
-            public void handleFailureAndError() {
-                adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
+            public void handleFailureAndError(String message) {
+                super.handleFailureAndError(message);
 
+                if(!TextUtils.isEmpty(message)) {
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+                }
+
+                adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
                 scrollRefreshStatusModels[2].setLoading(false);
                 viewPagerBindings[2].swipeRefreshLayout.setRefreshing(false);
             }

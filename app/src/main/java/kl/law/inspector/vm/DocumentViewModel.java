@@ -128,12 +128,13 @@ public class DocumentViewModel extends AbstractViewModel<Fragment, FragmentDocum
 
         scrollRefreshStatusModel.setLoading(true);
 
+        final RefreshRecyclerViewAdapter<ItemViewModel> adapter = (RefreshRecyclerViewAdapter<ItemViewModel>) binding.recycleView.getAdapter();
+        final List<ItemViewModel> datas = adapter.getData();
+
         NetworkAccessKit.getData(context, ApiKit.URL_DOCUMENT_LIST(scrollRefreshStatusModel.nextPage(), UserData.getInstance().getId()), new NetworkAccessKit.DefaultCallback<JSONObject>() {
 
             @Override
             public void onSuccess(JSONObject data) {
-                RefreshRecyclerViewAdapter<ItemViewModel> adapter = (RefreshRecyclerViewAdapter<ItemViewModel>) binding.recycleView.getAdapter();
-                List<ItemViewModel> datas = adapter.getData();
 
                 int pagecount = data.optInt("pagecount", 0);
                 if (pagecount > scrollRefreshStatusModel.getPage()) {
@@ -176,12 +177,17 @@ public class DocumentViewModel extends AbstractViewModel<Fragment, FragmentDocum
             }
 
             @Override
-            public void handleFailureAndError() {
+            public void handleFailureAndError(String message) {
+                super.handleFailureAndError(message);
+
+                if(!TextUtils.isEmpty(message)) {
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+                }
+
+                adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
                 scrollRefreshStatusModel.setHasMoreElements(false);
                 scrollRefreshStatusModel.setLoading(false);
                 binding.swipeRefreshLayout.setRefreshing(false);
-
-                Toast.makeText(context, "加载数据时发生错误，请稍后重试。", Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -222,6 +228,7 @@ public class DocumentViewModel extends AbstractViewModel<Fragment, FragmentDocum
 
     public static class CreateViewModel extends AbstractViewModel<Activity, ActivityDocumentCreateBinding>{
         public final ObservableField<String> title = new ObservableField<>();
+        public final ObservableField<String> opinion = new ObservableField<>();
 
         public final ObservableField<SimpleRecycleViewAdapter> fileAdapter = new ObservableField<>();
 
@@ -244,8 +251,6 @@ public class DocumentViewModel extends AbstractViewModel<Fragment, FragmentDocum
         }
 
         public void onSubmit(View view){
-            view.setEnabled(false);
-
             //获取待上传的文件列表
             List<Map<String, Object>> fileList = new LinkedList<>();
 
@@ -262,6 +267,12 @@ public class DocumentViewModel extends AbstractViewModel<Fragment, FragmentDocum
                 }
             }
 
+            if(fileList.size()==0) {
+                Toast.makeText(context, "请选择上传的文件。", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            view.setEnabled(false);
             postFiles(fileList);
         }
 
@@ -329,6 +340,7 @@ public class DocumentViewModel extends AbstractViewModel<Fragment, FragmentDocum
                 JSONObject documentObject = new JSONObject();
                 documentObject.put("files", files.toString());
                 documentObject.put("title", title.get());
+                documentObject.put("opinion", opinion.get());
 
                 JSONObject userObject = new JSONObject();
                 userObject.put("userId", UserData.getInstance().getId());
@@ -406,6 +418,8 @@ public class DocumentViewModel extends AbstractViewModel<Fragment, FragmentDocum
     public static class ApproveViewModel extends AbstractViewModel<Activity, ActivityDocumentApproveBinding> {
         public final ObservableField<String> title = new ObservableField<>();
         public final ObservableField<String> opinion = new ObservableField<>();
+        public final ObservableField<String> opinion1 = new ObservableField<>();
+        public final ObservableField<String> opinion2 = new ObservableField<>();
 
         public final ObservableField<SimpleRecycleViewAdapter> fileAdapter = new ObservableField<>();
         public final ObservableField<SimpleRecycleViewAdapter> approverAdapter = new ObservableField<>();
@@ -424,7 +438,9 @@ public class DocumentViewModel extends AbstractViewModel<Fragment, FragmentDocum
                 @Override
                 public void onSuccess(JSONObject data) {
                     title.set(data.optString("docTitle"));
-                    opinion.set(data.optString("leaderOption"));
+                    opinion.set(data.optString("leaderOptions"));
+                    opinion1.set(data.optString("opinion1"));
+                    opinion2.set(data.optString("opinion2"));
 
                     List<AttachmentViewModel> datas = new ArrayList<>();
                     String fileStr = data.optString("files");
@@ -481,17 +497,20 @@ public class DocumentViewModel extends AbstractViewModel<Fragment, FragmentDocum
         }
 
         public void onSendToLeaderClicked(View view) {
-            MemberViewModel approvalViewModel = null;
+            String approvalIds = "";
             SimpleRecycleViewAdapter<MemberViewModel> adapter = (SimpleRecycleViewAdapter<MemberViewModel>) binding.approverRecyclerView.getAdapter();
             List<MemberViewModel> datas = adapter.getData();
             for (MemberViewModel vm : datas) {
                 if (vm.selected.get()) {
-                    approvalViewModel = vm;
-                    break;
+                    if("".equals(approvalIds)){
+                        approvalIds = vm.id;
+                    }else{
+                        approvalIds = approvalIds + ";" + vm.id;
+                    }
                 }
             }
 
-            if (approvalViewModel == null) {
+            if ("".equals(approvalIds)) {
                 Toast.makeText(context, "请选择审批人。", Toast.LENGTH_LONG).show();
                 return;
             }
@@ -508,7 +527,8 @@ public class DocumentViewModel extends AbstractViewModel<Fragment, FragmentDocum
                 JSONObject documentObject = new JSONObject();
                 documentObject.put("id", id);
                 documentObject.put("progressCode", 1);
-                documentObject.put("approvalId", approvalViewModel.id);
+                documentObject.put("approvalId", approvalIds);
+                documentObject.put("opinion", opinion2.get());
                 jsonData.put("document", documentObject);
 
                 NetworkAccessKit.postData(context, ApiKit.URL_DOCUMENT_APPROVE, jsonData, new NetworkAccessKit.DefaultCallback() {
@@ -592,7 +612,7 @@ public class DocumentViewModel extends AbstractViewModel<Fragment, FragmentDocum
                             NetworkAccessKit.postData(context, ApiKit.URL_DOCUMENT_APPROVE, jsonData, new NetworkAccessKit.DefaultCallback() {
                                 @Override
                                 public void onSuccess(Object data) {
-                                    Toast.makeText(context, "公文已开始传阅。", Toast.LENGTH_LONG).show();
+                                    Toast.makeText(context, "公文归档。", Toast.LENGTH_LONG).show();
 
                                     owner.setResult(Activity.RESULT_OK);
                                     owner.finish();
@@ -657,6 +677,11 @@ public class DocumentViewModel extends AbstractViewModel<Fragment, FragmentDocum
                         owner.setResult(Activity.RESULT_OK);
                         owner.finish();
                     }
+
+                    @Override
+                    public void onFailure(int code, String remark) {
+                        Log.d("TEST", remark);
+                    }
                 });
             } catch (Exception e) {
                 e.printStackTrace();
@@ -680,18 +705,18 @@ public class DocumentViewModel extends AbstractViewModel<Fragment, FragmentDocum
                 MemberListItemBinding itemBinding = DataBindingUtil.getBinding(view);
                 MemberViewModel current = itemBinding.getViewModel();
 
-                ActivityDocumentApproveBinding parentBinding = DataBindingUtil.getBinding((View) (view.getParent().getParent().getParent().getParent()));
-                SimpleRecycleViewAdapter<MemberViewModel> adapter = (SimpleRecycleViewAdapter<MemberViewModel>) parentBinding.approverRecyclerView.getAdapter();
-                List<MemberViewModel> datas = adapter.getData();
-                for (MemberViewModel data : datas) {
-                    if (data != current) {
-                        data.selected.set(false);
-                    }
-                }
+//                ActivityDocumentApproveBinding parentBinding = DataBindingUtil.getBinding((View) (view.getParent().getParent().getParent().getParent()));
+//                SimpleRecycleViewAdapter<MemberViewModel> adapter = (SimpleRecycleViewAdapter<MemberViewModel>) parentBinding.approverRecyclerView.getAdapter();
+//                List<MemberViewModel> datas = adapter.getData();
+//                for (MemberViewModel data : datas) {
+//                    if (data != current) {
+//                        data.selected.set(false);
+//                    }
+//                }
 
                 current.selected.set(!current.selected.get());
 
-                adapter.notifyDataSetChanged();
+//                adapter.notifyDataSetChanged();
             }else if(parentRecyclerView.getId()==R.id.readerRecyclerView) {
                 MemberListItemBinding itemBinding = DataBindingUtil.getBinding(view);
                 MemberViewModel current = itemBinding.getViewModel();

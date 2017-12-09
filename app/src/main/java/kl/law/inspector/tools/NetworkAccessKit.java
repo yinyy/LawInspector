@@ -48,18 +48,18 @@ public final class NetworkAccessKit {
         public void onFailure(int code, String remark) {
             Log.d("TEST", code + ", " + remark);
 
-            handleFailureAndError();
+            handleFailureAndError(remark);
         }
 
         @Override
         public void onError(String message) {
             Log.d("TEST", message);
 
-            handleFailureAndError();
+            handleFailureAndError(message);
         }
 
-        public void handleFailureAndError(){
-            //默认什么也不做
+        public void handleFailureAndError(String message){
+            //什么也不做
         }
     }
 
@@ -76,18 +76,20 @@ public final class NetworkAccessKit {
         getData(context, Request.Method.GET, url, callback);
     }
 
-    public static void getData(Context context, int method, String url, final Callback callback){
+    public static void getData(Context context, int method, String url, final Callback callback) {
         JsonObjectRequest request = new JsonObjectRequest(method, url, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
                 int code = response.optInt("code", -1);
                 if (code == -1) {
                     callback.onError("系统繁忙，请稍后重试。");
-                }else if (code == 0) {
+                } else if (code == 0) {
                     String result = response.optString("result", "success");
                     if ("success".equals(result)) {
                         callback.onSuccess(response.opt("data"));
-                    } else {
+                    } else if (code == 44004) {
+                        callback.onFailure(44004, "未查询到数据。");
+                    }else {
                         callback.onFailure(0, response.optString("remark"));
                     }
                 } else {
@@ -101,7 +103,7 @@ public final class NetworkAccessKit {
                 callback.onError("发生严重错误。");
             }
         });
-        request.setRetryPolicy(new DefaultRetryPolicy(1000*30, 0, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+        request.setRetryPolicy(new DefaultRetryPolicy(1000 * 30, 0, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
 
         RequestQueue queue = getVolleyRequest(context);
         queue.add(request);
@@ -119,6 +121,8 @@ public final class NetworkAccessKit {
                     String result = response.optString("result", "success");
                     if ("success".equals(result)) {
                         callback.onSuccess(response.opt("data"));
+                    } else if (code == 44004) {
+                        callback.onFailure(44004, "未查询到数据。");
                     } else {
                         callback.onFailure(0, response.optString("remark"));
                     }
@@ -193,7 +197,9 @@ public final class NetworkAccessKit {
                         }else{
                             callback.onFailure(0, jsonObject.optString("remark"));
                         }
-                    }else{
+                    }else if (code == 44004) {
+                        callback.onFailure(44004, "未查询到数据。");
+                    } else{
                         callback.onFailure(jsonObject.optInt("code"),  jsonObject.optString("remark"));
                     }
                 } catch (Exception e) {

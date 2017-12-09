@@ -231,12 +231,12 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
 
         scrollRefreshStatusModels[index].setLoading(true);
 
+        final RefreshRecyclerViewAdapter<ItemViewModel> adapter = (RefreshRecyclerViewAdapter<ItemViewModel>) viewPagerBindings[index].recycleView.getAdapter();
+        final List<ItemViewModel> datas = adapter.getData();
+
         NetworkAccessKit.getData(context, ApiKit.URL_LEGAL_CASE_LIST(scrollRefreshStatusModels[index].nextPage(), index + 1, UserData.getInstance().getId()), new NetworkAccessKit.DefaultCallback<JSONObject>() {
             @Override
             public void onSuccess(JSONObject data) {
-                RefreshRecyclerViewAdapter<ItemViewModel> adapter = (RefreshRecyclerViewAdapter<ItemViewModel>) viewPagerBindings[index].recycleView.getAdapter();
-                List<ItemViewModel> datas = adapter.getData();
-
                 int pagecount = data.optInt("pagecount", 0);
                 if (pagecount > scrollRefreshStatusModels[index].getPage()) {
                     adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_HAS_MORE_ELEMENTS);
@@ -274,12 +274,18 @@ public class LegalCaseViewModel extends AbstractViewModel<Fragment, FragmentLega
             }
 
             @Override
-            public void handleFailureAndError() {
+            public void handleFailureAndError(String message) {
+                super.handleFailureAndError(message);
+
+                if(!TextUtils.isEmpty(message)) {
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+                }
+
+                adapter.getFooterViewModel().status.set(RefreshRecyclerViewAdapter.FooterViewModel.STATUS_NO_MORE_ELEMENTS);
+
                 scrollRefreshStatusModels[index].setHasMoreElements(false);
                 scrollRefreshStatusModels[index].setLoading(false);
                 viewPagerBindings[index].swipeRefreshLayout.setRefreshing(false);
-
-                Toast.makeText(context, "加载数据时发生错误，请稍后重试。", Toast.LENGTH_LONG).show();
             }
         });
     }
